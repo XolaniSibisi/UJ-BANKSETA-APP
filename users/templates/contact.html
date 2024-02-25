@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% from 'bootstrap5/form.html' import render_field %}
+{% from 'bootstrap5/utils.html' import render_messages %}
+{% block title %}Contact{% endblock %}
+
+{% block body %}
+
+<main class="my-5">
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-sm-10 col-md-8 col-lg-6 col-xl-5 mt-5">
+            <div class="card shadow-sm border-0 mb-4"></div>
+            <div class="p-4">
+                <form action="{{ url_for('users.contact') }}" method=post>
+                    {{ form.csrf_token }}
+                    <h2 class="card-title text-center">Contact Us</h2>
+                    {{ render_messages() }}
+                    {{ form.hidden_tag() }}
+                    <div class="form-group">
+                        {{ form.name.label }}
+                        {{ form.name(class="form-control") }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.email.label }}
+                        {{ form.email(class="form-control") }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.subject.label }}
+                        {{ form.subject(class="form-control") }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.message.label }}
+                        {{ form.message(class="form-control") }}
+                    </div>
+                    <br>
+                    <div class="form-group">
+                        {{ render_field(form.submit, class="w-100 mb-3") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</main>
+{% endblock %}
+
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{{ bootstrap.load_css() }}
+
+<script>
+    // Function to hide messages after a delay
+    function hideMessages() {
+        var messagesElements = document.querySelectorAll('.alert');
+        if (messagesElements) {
+            setTimeout(function() {
+                messagesElements.forEach(function(element) {
+                    element.style.display = 'none';
+                });
+            }, 3000);  // 5000 milliseconds (5 seconds)
+        }
+    }
+
+    // Call the function when the page loads
+    window.onload = hideMessages;
+</script>
+{% endblock %}

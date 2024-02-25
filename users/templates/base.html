@@ -1,0 +1,106 @@
+{% from 'bootstrap5/utils.html' import render_icon %}
+{% from 'bootstrap5/nav.html' import render_nav_item %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="shortcut icon" href="{{ url_for('static', filename='assets/favicon.ico') }}" type="image/x-icon">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <title>{% block title %}{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {{ bootstrap.load_css() }}
+
+  <style>
+    body {
+        min-height: 100vh;
+    }
+  </style>    
+</head>
+
+<body style="background-color: #f1f4fc;">
+  
+  <!-- navbar -->
+  <nav class="navbar navbar-expand-md navbar-dark bg-purple static-top py-1 fixed-top">
+    <div class="container-fluid px-lg-4">
+      <a class="navbar-brand" href="{{ url_for('users.index') }}">
+        <div class="d-flex p-2 rounded-3" style="border: 1px solid #fff;">
+          <img class="w-100 me-2" src="{{ url_for('static', filename='assets/images/logo.png') }}" alt=""
+            style="height: 35px;" width="30px">
+          <h4 class="text-uppercase m-0">Grade 12 Support</h4>
+        </div>
+      </a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
+        aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="mainNavbar">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          {{ render_nav_item('users.index', 'Home') }}
+          {% if current_user.is_authenticated %}
+          {{ render_nav_item('users.maths_content', 'Maths') }}
+          {{ render_nav_item('users.science_content', 'Science') }}
+          {{ render_nav_item('users.live_classes', 'Live Classes') }}
+          {{ render_nav_item('users.forum', 'Forum') }}
+          {{ render_nav_item('users.contact', 'Contact Us') }}
+          {{ render_nav_item('users.profile', 'Profile') }}
+          {% endif %}
+        </ul>
+        <ul class="navbar-nav ms-auto my-2 mb-lg-0">
+          {% if not current_user.is_authenticated %}
+          <li class="nav-item my-2 my-md-0 ms-md-2">
+            <a class="btn btn-outline-light" href="{{ url_for('users.login') }}">Login</a>
+          </li>
+          {% else %}
+          <li class="nav-item">
+            <a class="btn btn-outline-light" href="{{ url_for('users.logout') }}">Logout</a>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  {% block body %} {% endblock %}
+
+  <footer class="footer bg-dark text-white py-3">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12 text-center">
+          <p>&copy; 2024 All Rights Reserved | Johannesburg Business School</p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Close the navbar when a link is clicked
+      document.querySelectorAll('.navbar-nav > .nav-item > .nav-link').forEach(function(element) {
+        element.addEventListener('click', function() {
+          document.querySelector('.navbar-collapse').classList.remove('show');
+        });
+      });
+  
+      // Close the navbar when clicking outside of it
+      document.body.addEventListener('click', function(event) {
+        var target = event.target;
+        var navbarCollapse = document.querySelector('.navbar-collapse');
+        if (!navbarCollapse.contains(target)) {
+          navbarCollapse.classList.remove('show');
+        }
+      });
+    });
+  </script>  
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>  
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  {{ bootstrap.load_js() }}
+</body>
+
+</html>

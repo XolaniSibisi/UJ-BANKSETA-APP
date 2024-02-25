@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% from 'bootstrap5/utils.html' import render_messages %}
+{% block title %}Forum{% endblock %}
+
+{% block body %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="mt-4">Forum</h1>
+            <p class="lead">Welcome to the forum. Here you can ask questions and get help from other students and teachers.</p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card my-4">
+                <h5 class="card-header">Ask a Question</h5>
+                <div class="card-body">
+                    <form action="{{ url_for('users.forum') }}" method="POST">
+                        {{ render_messages(dismissible=True, dismiss_animate=True) }}
+                        <div class="form-group">
+                            <label for="title">Title</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="content">Content</label>
+                            <textarea class="form-control" id="content" name="content" rows="3" required></textarea>    
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <h2>Questions</h2>
+            <ul class="list-group">
+                {% for question in questions %}
+                <li class="list-group-item">
+                    <h5>{{ question.title }}</h5>
+                    <p>{{ question.body }}</p>
+                    <small>Asked by {{ question.user.username }} on {{ question.created_at.strftime('%Y-%m-%d') }}</small>
+                    <!-- Response form for each question -->
+                    <form action="{{ url_for('users.forum') }}" method="POST">
+                        {{ response_form.hidden_tag() }}
+                        <div class="form-group mt-3">
+                            <textarea class="form-control" rows="2" placeholder="Your response..." name="body" required></textarea>
+                        </div>
+                        <input type="hidden" name="question_id" value="{{ question.id }}">
+                        <button type="submit" class="btn btn-primary">Post Response</button>
+                    </form>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
