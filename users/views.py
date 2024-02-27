@@ -31,6 +31,7 @@ from users.extensions import mail
 from datetime import datetime, timedelta
 import re
 import os
+import sqlite3
 
 
 """
@@ -105,7 +106,7 @@ def login():
 
             login_user(user, remember=True, duration=timedelta(days=15))
             # flash("You are logged in successfully.", 'success')
-            return redirect(url_for('users.index'))
+            return redirect(url_for('users.profile'))
 
         return redirect(url_for('users.login'))
 
@@ -132,6 +133,7 @@ def confirm_account(token=None):
         return render_template('confirm_account.html', token=token)
 
     return abort(404)
+
 
 
 @users.route('/logout', strict_slashes=False)
@@ -397,3 +399,13 @@ def forum():
 @login_required
 def live_classes():
     return render_template('live_classes.html')
+
+@users.route('/related_links', methods=['GET', 'POST'], strict_slashes=False)
+@login_required
+def related_links():
+    return render_template('related_links.html')
+
+@users.route('/search', methods=['GET', 'POST'], strict_slashes=False)
+@login_required
+def search():
+    return render_template('search.html')
