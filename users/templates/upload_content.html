@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% from 'bootstrap5/form.html' import render_field %}
+{% from 'bootstrap5/utils.html' import render_messages %}
+{% block title %}Upload Content{% endblock %}
+
+{% block body %}
+<main class="my-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 mt-5">
+                <h2 class="text-center mb-4">Upload Content</h2>
+                <form method="post" action="{{ url_for('users.upload_content') }}">
+                    {{ form.csrf_token }}
+                    {{ render_messages(dismissible=True, dismiss_animate=True) }}
+                    {{ render_field(form.title, class="form-control mb-3", placeholder="Title") }}
+                    {{ render_field(form.link, class="form-control mb-3", placeholder="Link") }}
+                    <div class="mb-3">
+                        <label for="content_type" class="form-label">Content Type</label>
+                        <select class="form-select" id="content_type" name="content_type">
+                            <option value="textbook">Textbook</option>
+                            <option value="past_year_paper">Past Year Paper</option>
+                            <option value="worksheet">Worksheet</option>
+                            <option value="study_guide">Study Guide</option>
+                            <option value="additional_problem">Additional Problem</option>
+                            <option value="video">Video</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="stem" class="form-label">Subject</label><br>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="stem" id="math_stem" value="maths">
+                            <label class="form-check-label" for="math_stem">Math</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="stem" id="science_stem" value="science">
+                            <label class="form-check-label" for="science_stem">Science</label>
+                        </div>
+                    </div>
+                    <input type="hidden" name="published" value="True">
+                    <button type="submit" class="btn btn-primary">Upload</button> <a href="{{ url_for('users.dashboard') }}" class="btn btn-dark">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    // Function to hide messages after a delay
+    function hideMessages() {
+        var messagesElements = document.querySelectorAll('.alert');
+        if (messagesElements) {
+            setTimeout(function() {
+                messagesElements.forEach(function(element) {
+                    element.style.display = 'none';
+                });
+            }, 3000);  // 5000 milliseconds (5 seconds)
+        }
+    }
+
+    // Call the function when the page loads
+    window.onload = hideMessages;
+</script>
+{% endblock %}

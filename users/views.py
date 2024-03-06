@@ -1,37 +1,44 @@
-from flask import abort, render_template, request, redirect, url_for, flash
-from flask import Blueprint
+from flask import abort, render_template, request, redirect, url_for, flash, jsonify
+from flask_wtf.csrf import generate_csrf
+from flask import Blueprint, send_file
+import logging
 from flask_login import (
-        current_user,
-        login_required,
-        login_user,
-        logout_user
-    )
+    current_user,
+    login_required,
+    login_user,
+    logout_user
+)
 
-from users.extensions import database as db
-from users.models import User, Profile
+from users.extensions import database as db, csrf
+from users.models import User, Profile, Content, Contact
 from users.forms import (
-        RegisterForm, 
-        LoginForm, 
-        ForgotPasswordForm,
-        ResetPasswordForm,
-        ChangePasswordForm,
-        ChangeEmailForm,
-        ContactForm,
-        EditUserProfileForm
-    )
+    RegisterForm,
+    LoginForm,
+    ForgotPasswordForm,
+    ResetPasswordForm,
+    ChangePasswordForm,
+    ChangeEmailForm,
+    ContactForm,
+    UploadContentForm,
+    EditUserProfileForm
+)
 from users.utils import (
-        unique_security_token,
-        get_unique_filename,
-        send_reset_password,
-        send_reset_email
-    )
+    unique_security_token,
+    get_unique_filename,
+    send_reset_password,
+    send_reset_email
+)
 
 from flask_mail import Message
 from users.extensions import mail
 from datetime import datetime, timedelta
 import re
+import mimetypes
+import requests
+import tempfile
 import os
-import sqlite3
+from flask_cors import CORS, cross_origin
+from urllib.parse import urlparse, parse_qs
 
 
 """
@@ -40,12 +47,15 @@ within our application.
 """
 users = Blueprint('users', __name__, template_folder='templates')
 
+CORS(users)
+
+
 @users.route('/register', methods=['GET', 'POST'], strict_slashes=False)
 def register():
     form = RegisterForm()
 
     if current_user.is_authenticated:
-        return redirect(url_for('users.index'))
+        return redirect(url_for('users.home'))
 
     if form.validate_on_submit():
         username = form.data.get('username')
@@ -65,12 +75,13 @@ def register():
                 password=password
             )
             user.set_password(password)
-            
+
             if role == 'admin':
                 user.is_superuser = True  # Assign superuser privileges
             user.save()
             user.send_confirmation()
-            flash("A confirmation link sent to your email. Please verify your account.", 'info')
+            flash(
+                "A confirmation link sent to your email. Please verify your account.", 'info')
             return redirect(url_for('users.login'))
         except Exception as e:
             flash("Something went wrong", 'error')
@@ -86,13 +97,14 @@ def login():
     form = LoginForm()
 
     if current_user.is_authenticated:
-        return redirect(url_for('users.index'))
+        return redirect(url_for('users.home'))
 
     if form.validate_on_submit():
         username = form.data.get('username')
         password = form.data.get('password')
 
-        user = User.get_user_by_username(username) or User.get_user_by_email(username)
+        user = User.get_user_by_username(
+            username) or User.get_user_by_email(username)
 
         if not user:
             flash("User account doesn't exists.", 'error')
@@ -123,9 +135,11 @@ def confirm_account(token=None):
                 auth_user.active = True
                 auth_user.security_token = None
                 db.session.commit()
-                login_user(auth_user, remember=True, duration=timedelta(days=15))
-                flash(f"Welcome {auth_user.username}, You're registered successfully.", 'success')
-                return redirect(url_for('users.index'))
+                login_user(auth_user, remember=True,
+                           duration=timedelta(days=15))
+                flash(
+                    f"Welcome {auth_user.username}, You're registered successfully.", 'success')
+                return redirect(url_for('users.home'))
             except Exception as e:
                 flash("Something went wrong.", 'error')
                 return redirect(url_for('users.login'))
@@ -133,7 +147,6 @@ def confirm_account(token=None):
         return render_template('confirm_account.html', token=token)
 
     return abort(404)
-
 
 
 @users.route('/logout', strict_slashes=False)
@@ -158,11 +171,12 @@ def forgot_password():
                 user.is_send = datetime.now()
                 db.session.commit()
                 send_reset_password(user)
-                flash("A reset password link sent to your email. Please check.", 'success')
+                flash(
+                    "A reset password link sent to your email. Please check.", 'success')
                 return redirect(url_for('users.login'))
             except Exception as e:
                 flash("Something went wrong", 'error')
-                return redirect(url_for('accounts.forgot_password'))
+                return redirect(url_for('users.forgot_password'))
 
         flash("Email address is not registered with us.", 'error')
         return redirect(url_for('users.forgot_password'))
@@ -210,10 +224,8 @@ def change_password():
         confirm_password = form.data.get('confirm_password')
 
         user = User.query.get_or_404(current_user.id)
-        
-        if current_user.username == 'test_user':
-            flash("Test user limited to read-only access.", 'error')
-        elif not user.check_password(old_password):
+
+        if not user.check_password(old_password):
             flash("Your old password is incorrect.", 'error')
         elif not (new_password == confirm_password):
             flash("Your new password field's not match.", 'error')
@@ -223,7 +235,7 @@ def change_password():
             user.set_password(new_password)
             db.session.commit()
             flash("Your password changed successfully.", 'success')
-            return redirect(url_for('users.index'))
+            return redirect(url_for('users.home'))
 
         return redirect(url_for('users.change_password'))
     return render_template('change_password.html', form=form)
@@ -239,12 +251,10 @@ def change_email():
 
         user = User.query.get_or_404(current_user.id)
 
-        if current_user.username == 'test_user':
-            flash("Guest user limited to read-only access.", 'error')
-        elif email == user.email:
-            flash("Email is already verified with your account.", 'warning')  
+        if email == user.email:
+            flash("Email is already verified with your account.", 'warning')
         elif email in [u.email for u in User.query.all() if email != user.email]:
-            flash("Email address is already registered with us.", 'warning')  
+            flash("Email address is already registered with us.", 'warning')
         else:
             try:
                 user.change_email = email
@@ -252,12 +262,13 @@ def change_email():
                 user.is_send = datetime.now()
                 db.session.commit()
                 send_reset_email(user=user)
-                flash("A reset email link sent to your new email address. Please verify.", 'success')
-                return redirect(url_for('users.index'))
+                flash(
+                    "A reset email link sent to your new email address. Please verify.", 'success')
+                return redirect(url_for('users.home'))
             except Exception as e:
                 flash("Something went wrong.", 'error')
                 return redirect(url_for('users.change_email'))
-            
+
         return redirect(url_for('users.change_email'))
 
     return render_template('change_email.html', form=form)
@@ -275,10 +286,10 @@ def confirm_email(token=None):
                 user.security_token = None
                 db.session.commit()
                 flash(f"Your email address updated successfully.", 'success')
-                return redirect(url_for('accounts.index'))
+                return redirect(url_for('users.home'))
             except Exception as e:
                 flash("Something went wrong", 'error')
-                return redirect(url_for('users.index'))
+                return redirect(url_for('users.home'))
 
         return render_template('confirm_email.html', token=token)
 
@@ -287,18 +298,8 @@ def confirm_email(token=None):
 
 @users.route('/', strict_slashes=False)
 @users.route('/home', strict_slashes=False)
-def index():
-    return render_template('index.html', profile=profile)
-
-@users.route('/maths_content', strict_slashes=False)
-@login_required
-def maths_content():
-    return render_template('maths_content.html')
-
-@users.route('/science_content', strict_slashes=False)
-@login_required
-def science_content():
-    return render_template('science_content.html')
+def home():
+    return render_template('home.html', profile=profile)
 
 
 @users.route('/profile', methods=['GET', 'POST'], strict_slashes=False)
@@ -316,7 +317,6 @@ def profile():
         profile_image = form.data.get('profile_image')
         about = form.data.get('about')
 
-        
         if username in [user.username for user in User.query.all() if username != current_user.username]:
             flash("Username already exists. Choose another.", 'error')
         else:
@@ -327,36 +327,57 @@ def profile():
 
             if profile_image and getattr(profile_image, "filename"):
                 profile.set_avator(profile_image)
-            
+
             db.session.commit()
             flash("Your profile update successfully.", 'success')
             return redirect(url_for('users.profile'))
 
         return redirect(url_for('users.edit_profile'))
-        
+
     return render_template('profile.html', form=form, profile=profile)
+
 
 @users.route('/contact', methods=['GET', 'POST'])
 def contact():
     form = ContactForm()
-    if request.method == 'POST':
-        if form.validate() == False:
-            flash('All fields are required.')
-            return render_template('contact.html', form=form)
-        else:
-            sender_email = current_user.email if current_user.is_authenticated else form.email.data
-            msg = Message(form.subject.data, sender=sender_email, recipients=[os.environ.get('MAIL_USERNAME')])
-            msg.body = f"""
-            From: {form.name.data} <{sender_email}>
-            {form.message.data}
-            """
-            mail.send(msg)
-            flash('Thank you for contacting us, we will get back to you soon.', 'success')
-            return redirect(url_for('users.contact'))
-    elif request.method == 'GET':
-        return render_template('contact.html', form=form)
+    if form.validate_on_submit():
+        entry = Contact(
+            name=form.name.data,
+            email=form.email.data,
+            subject=form.subject.data,
+            message=form.message.data
+        )
+        
+        entry.save()
+        
+        
+        send_email(form.name.data, form.email.data, form.subject.data, form.message.data)
+        
+        
+        return redirect(url_for('users.contact_success'))
     
-@users.route('/ediit_profile', methods=['GET', 'POST'], strict_slashes=False)
+    return render_template('contact.html', form=form)
+
+@users.route('/contact/success')
+def contact_success():
+    return render_template('contact_success.html')
+
+def send_email(name, email, subject, message):
+    msg = Message(subject=f"New message from {name} via contact form",
+                  sender=current_user.email if current_user.is_authenticated else form.email.data,
+                  recipients=[os.environ.get('MAIL_USERNAME')])
+    msg.body = f"Name: {name}\nEmail: {email}\nSubject: {subject}\nMessage: {message}"
+    
+    try:
+        mail.send(msg)  
+        return True
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return False
+        
+
+# route to edit profile
+@users.route('/edit_profile', methods=['GET', 'POST'], strict_slashes=False)
 @login_required
 def edit_profile():
     form = EditUserProfileForm()
@@ -381,31 +402,229 @@ def edit_profile():
 
             if profile_image and getattr(profile_image, "filename"):
                 profile.set_avator(profile_image)
-            
+
             db.session.commit()
             flash("Your profile update successfully.", 'success')
             return redirect(url_for('users.profile'))
 
         return redirect(url_for('users.edit_profile'))
-        
+
     return render_template('edit_profile.html', form=form, profile=profile)
+
 
 @users.route('/forum', methods=['GET', 'POST'], strict_slashes=False)
 @login_required
 def forum():
     return render_template('forum.html')
 
+
 @users.route('/live_classes', methods=['GET', 'POST'], strict_slashes=False)
 @login_required
 def live_classes():
     return render_template('live_classes.html')
+
 
 @users.route('/related_links', methods=['GET', 'POST'], strict_slashes=False)
 @login_required
 def related_links():
     return render_template('related_links.html')
 
+
 @users.route('/search', methods=['GET', 'POST'], strict_slashes=False)
 @login_required
 def search():
     return render_template('search.html')
+
+
+@users.route('/maths_content', methods=['GET'])
+@login_required
+def maths_content():
+    # Fetch maths content from the database
+    maths_content = Content.query.filter_by(stem='maths').all()
+
+    # Organize the content into a dictionary structure based on content_type
+    content_data = {}
+    for content in maths_content:
+        content_data.setdefault(content.content_type, []).append(content)
+
+    if not content_data:  # If content_data is empty or None
+        return render_template('no_content.html')
+
+    return render_template('maths_content.html', content_data=content_data)
+
+
+@users.route('/science_content', methods=['GET'])
+@login_required
+def science_content():
+    # Fetch science content from the database
+    science_content = Content.query.filter_by(stem='science').all()
+
+    # Organize the content into a dictionary structure based on content_type
+    content_data = {}
+    for content in science_content:
+        content_data.setdefault(content.content_type, []).append(content)
+
+    if not content_data:  # If content_data is empty or None
+        return render_template('no_content.html')
+
+    return render_template('science_content.html', content_data=content_data)
+
+
+# Define a route to handle the upload_content.html template
+@users.route('/upload_content', methods=['POST', 'GET'])
+@login_required
+def upload_content():
+    form = UploadContentForm()
+    if form.validate_on_submit():
+        title = form.title.data
+        content_type = form.content_type.data
+        link = form.link.data
+        stem = form.stem.data
+
+        # Get the current user's ID
+        user_id = current_user.id
+
+        # Create a new Content object
+        new_content = Content(
+            title=title,
+            content_type=content_type,
+            link=link,
+            stem=stem,
+            user_id=user_id
+        )
+
+        db.session.add(new_content)
+        db.session.commit()
+
+        flash('Content uploaded successfully', 'success')
+        return redirect(url_for('users.upload_content'))
+
+    return render_template('upload_content.html', form=form)
+
+# Define a route to handle the no_content.html template
+@users.route('/no_content', methods=['GET'])
+@login_required
+def no_content():
+    return render_template('no_content.html')
+
+# favicon route
+@users.route("/favicon.ico")
+def favicon():
+    return "", 200
+
+# Define a function to convert YouTube watch URLs to embed URLs
+def convert_to_embed_link(link):
+    parsed_url = urlparse(link)
+    video_id = parse_qs(parsed_url.query).get('v')
+    if video_id:
+        return f"https://www.youtube.com/embed/{video_id[0]}"
+    return None
+
+# Define the view_content endpoint
+@users.route('/view_content/<content_id>')
+@cross_origin(origin=['http://127.0.0.1:5000', 'http://localhost:5000', 'https://www.youtube.com'])
+@login_required
+def view_content(content_id):
+    # Fetch the content data from the database based on the content_id
+    content = Content.query.get(content_id)
+    if content:
+        # Convert YouTube link to embed link
+        content.embed_link = convert_to_embed_link(content.link)
+        # Render the view_content.html template and pass the content data
+        return render_template('view_content.html', content=content)
+    else:
+        # If content is not found, redirect to a home page
+        flash('Content not found', 'error')
+        return redirect(url_for('users.home'))
+
+# Define the download_content endpoint
+@users.route('/download_content/<content_id>', methods=['GET'])
+@login_required
+def download_content(content_id):
+    # Retrieve the Content object based on the content_id
+    content = Content.query.get_or_404(content_id)
+
+    # If the content type is a video (e.g., YouTube link)
+    if content.content_type == 'video':
+        # Redirect users to the YouTube video page
+        return redirect(content.link)
+    else:
+        # For other types of content, download the file
+        # Retrieve the file from the URL
+        response = requests.get(content.link)
+
+        # Check if the request was successful
+        if response.status_code == 200:
+            # Get the content type from the database
+            content_type = content.content_type
+
+            file_extension = mimetypes.guess_extension(content_type)
+
+            if not file_extension:
+                file_extension = ".pdf"
+
+            temp_file = tempfile.NamedTemporaryFile(
+                suffix=file_extension, delete=False)
+            temp_file.write(response.content)
+            temp_file.close()
+
+            title = content.title if content.title else "Untitled"
+            filename = title + file_extension
+
+            return send_file(temp_file.name, as_attachment=True, download_name=filename)
+        else:
+            
+            flash('Failed to download content.', 'error')
+            return redirect(url_for('users.home'))
+
+# Admin dashboard route
+@users.route('/dashboard', methods=['GET'])
+@login_required
+def dashboard():
+    # Fetch all content from the database
+    all_content = Content.query.all()
+    return render_template('dashboard.html', all_content=all_content)
+
+# Route to edit content
+@users.route('/edit_content/<content_id>', methods=['GET'])
+@login_required
+def edit_content(content_id):
+    # Fetch the content by ID
+    content = Content.query.get_or_404(content_id)
+
+    return render_template('edit_content.html', content=content)
+
+@users.route('/edit_content', methods=['POST'])
+# @login_required
+def update_content():
+    # Fetch the content by ID
+    content_id = request.form.get('content_id')
+    content = Content.query.get_or_404(content_id)
+
+    # Update the content data
+    content.title = request.form.get('title')
+    content.content_type = request.form.get('content_type')
+    content.link = request.form.get('link')
+    content.stem = request.form.get('stem')
+
+    # Save the updated content
+    db.session.commit()
+
+    flash('Content updated successfully.', 'success')
+    return redirect(url_for('users.dashboard'))
+
+# Route to delete content
+@users.route('/delete_content/<content_id>', methods=['GET','POST'])
+@login_required
+def delete_content(content_id):
+    
+    # Fetch the content by ID
+    content = Content.query.get_or_404(content_id)
+
+    # Delete the content
+    db.session.delete(content)
+    db.session.commit()
+
+    flash('Content deleted successfully.', 'success')
+    return redirect(url_for('users.dashboard'))
+

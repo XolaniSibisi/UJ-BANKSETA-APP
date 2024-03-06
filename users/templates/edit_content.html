@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% from 'bootstrap5/utils.html' import render_messages %}
+{% block title %}Edit Content{% endblock %}
+
+{% block body %}
+<main class="my-5">
+<div class="container">
+    <h1 class="mt-5 mb-4 text-center" style="padding-top: 1.5rem;">Edit Content</h1>
+    <form method="post" action="/edit_content">
+        {{ render_messages() }}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="content_id" value="{{ content.id }}">
+        <div class="mb-3">
+            <label for="title" class="form-label">Title</label>
+            <input type="text" class="form-control" id="title" name="title" value="{{ content.title }}">
+        </div>
+        <div class="mb-3">
+            <label for="content_type" class="form-label">Content Type</label>
+            <input type="text" class="form-control" id="content_type" name="content_type" value="{{ content.content_type }}">
+        </div>
+        <div class="mb-3">
+            <label for="link" class="form-label">Link</label>
+            <input type="text" class="form-control" id="link" name="link" value="{{ content.link }}">
+        </div>
+        <div class="mb-3">
+            <label for="stem" class="form-label">Stem</label>
+            <input type="text" class="form-control" id="stem" name="stem" value="{{ content.stem }}">
+        </div>
+        <button type="submit" class="btn btn-primary">Update</button> <a href="{{ url_for('users.dashboard') }}" class="btn btn-dark">Cancel</a>
+    </form>
+</div>
+</main>
+
+<script>
+    // Function to hide messages after a delay
+    function hideMessages() {
+        var messagesElements = document.querySelectorAll('.alert');
+        if (messagesElements) {
+            setTimeout(function() {
+                messagesElements.forEach(function(element) {
+                    element.style.display = 'none';
+                });
+            }, 3000);  // 5000 milliseconds (5 seconds)
+        }
+    }
+
+    // Call the function when the page loads
+    window.onload = hideMessages;
+</script>
+{% endblock %}

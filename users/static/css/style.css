@@ -94,16 +94,6 @@
     margin-top: 0px;
     margin-bottom: 0px;
 }
-.widget{
-    background-color: white;
-    margin: 0.5em;
-    padding: 1em;
-    border-radius: 1em;
-    border: 1px solid black;
-    flex: 1;
-}
-.widget h5{
-    text-align: center;
-}
+
 
 

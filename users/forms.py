@@ -12,7 +12,8 @@ from wtforms.fields import (
     SelectField
 )
 from wtforms.validators import (
-    DataRequired, 
+    DataRequired,
+    InputRequired, 
     Length, 
     Email
 )
@@ -22,7 +23,7 @@ from users.validators import (
     StrongUsername,
     StrongPassword
 )
-from users.models import User
+from users.models import User, Content, Contact
 
 
 class RegisterForm(FlaskForm):
@@ -115,4 +116,11 @@ class ContactForm(FlaskForm):
   subject = StringField("Subject",validators = [DataRequired(message = "Please enter a subject.")])
   message = TextAreaField("Message",validators = [DataRequired(message = "Please enter a message.")])
   submit = SubmitField("Send")
+  
+class UploadContentForm(FlaskForm):
+    title = StringField('Title', validators=[InputRequired()])
+    content_type = SelectField('Content Type', choices=[('textbook', 'Textbook'), ('past_year_paper', 'Past Year Paper'), ('worksheet', 'Worksheet'), ('study_guide', 'Study Guide'), ('additional_problem', 'Additional Problem'), ('video', 'Video')], validators=[InputRequired()])
+    link = StringField('Link', validators=[InputRequired()])
+    stem = SelectField('STEM', choices=[('maths', 'Maths'), ('science', 'Science')], validators=[InputRequired()])
+    published = BooleanField('Published', default=True)
  

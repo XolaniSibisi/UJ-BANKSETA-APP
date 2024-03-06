@@ -136,3 +136,100 @@ class Profile(db.Model):
     def save(self):
         db.session.add(self)
         db.session.commit()
+        
+class Contact(db.Model):
+    """
+    A Contact model class.
+    """
+
+    __tablename__ = 'contact'
+
+    id = db.Column(db.String(38), primary_key=True, default=unique_uid, unique=True, nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    subject = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+
+    def __repr__(self):
+        return f"Contact(id={self.id}, name={self.name}, email={self.email}), subject={self.subject}), message={self.message})"
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def get_absolute_url(self):
+        return url_for('users.contact', contact_id=self.id)
+
+    def get_delete_url(self):
+        return url_for('users.delete_contact', contact_id=self.id)
+
+    def get_user(self):
+        return User.query.filter_by(email=self.email).first()
+        
+class Content(db.Model):
+    """
+    A Content model class.
+    """
+
+    __tablename__ = 'content'
+
+    id = db.Column(db.String(38), primary_key=True, default=unique_uid, unique=True, nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    content_type = db.Column(db.String(20), nullable=False)
+    link = db.Column(db.String(250), nullable=False)
+    stem = db.Column(db.String(250))
+    published = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
+    user_id = db.Column(db.String(38), db.ForeignKey('user.id', ondelete="CASCADE"), nullable=False)
+
+    def __repr__(self):
+        return f"Content(id={self.id}, title={self.title}, content_type={self.content_type}, link={self.link}, stem={self.stem})"
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+        
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+        
+    def get_absolute_url(self):
+        return url_for('users.content', content_id=self.id)
+    
+    def get_edit_url(self):
+        return url_for('users.edit_content', content_id=self.id)
+    
+    def get_delete_url(self):
+        return url_for('users.delete_content', content_id=self.id)
+    
+    def get_publish_url(self):
+        return url_for('users.publish_content', content_id=self.id)
+    
+    def get_unpublish_url(self):
+        return url_for('users.unpublish_content', content_id=self.id)
+    
+    def get_user(self):
+        return User.query.filter_by(id=self.user_id).first()
+    
+    def get_published(self):
+        return Content.query.filter_by(published=True).all()
+    
+    def get_unpublished(self):
+        return Content.query.filter_by(published=False).all()
+    
+    def get_published_by_user(self, user_id):
+        return Content.query.filter_by(published=True, user_id=user_id).all()
+    
+    def get_unpublished_by_user(self, user_id):
+        return Content.query.filter_by(published=False, user_id=user_id).all()
+    
+    def get_published_by_username(self, username):
+        user = User.query.filter_by(username=username).first()
+        return Content.query.filter_by(published=True, user_id=user.id).all()
+    
+    def get_unpublished_by_username(self, username):
+        user = User.query.filter_by(username=username).first()
+        return Content.query.filter_by(published=False, user_id=user.id).all()

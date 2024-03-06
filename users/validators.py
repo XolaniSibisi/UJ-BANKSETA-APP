@@ -34,11 +34,11 @@ class StrongUsername(object):
     def __init__(self, message=None):
         self.message = message
         if not self.message:
-            self.message = "Username contain only (A-Za-z0-9_-.) characters."
+            self.message = "Username contain only (A-Za-z0-9_-.@) characters."
 
     def __call__(self, form, field):
         username = field.data
-        if not re.match("^[a-zA-Z0-9_.-]+$", username):
+        if not re.match("^[a-zA-Z0-9_.-@]+$", username):
             raise ValidationError(self.message)
 
 

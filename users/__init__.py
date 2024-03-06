@@ -17,7 +17,7 @@ def create_app():
     Create and configure the Flask application instance.
     """
     app = FlaskAuth(__name__, template_folder="templates")
-
+    
     # application configuration.
     config_application(app)
     # configure application extension.
@@ -110,12 +110,12 @@ def config_errorhandler(app):
     @app.errorhandler(400)
     def bad_request(e):
         flash("Something went wrong.", 'error')
-        return redirect(url_for('users.index'))
+        return redirect(url_for('users.home'))
 
     @app.errorhandler(401)
     def unauthorized(e):
         flash("You are not authorized to perform this action.", 'error')
-        return redirect(url_for('users.index'))
+        return redirect(url_for('users.home'))
 
     @app.errorhandler(404)
     def page_not_found(e):
@@ -124,9 +124,9 @@ def config_errorhandler(app):
     @app.errorhandler(405)
     def method_not_allowed(e):
         flash("Method not allowed.", 'error')
-        return redirect(url_for('users.index'))
+        return redirect(url_for('users.home'))
 
     @app.errorhandler(500)
     def database_error(e):
         flash("Internal server error.", 'error')
-        return redirect(url_for('users.index'))
+        return redirect(url_for('users.home'))
