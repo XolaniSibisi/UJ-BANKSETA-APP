@@ -28,8 +28,12 @@
                                     {% for content in content_list %}
                                     <li class="mt-2">
                                         <a href="{{ content.link }}">{{ content.title }}</a>
-                                        <a href="{{ url_for('users.download_content', content_id=content.id) }}" class="btn btn-sm btn-primary" target="_blank">Download</a>
-                                        <a href="{{ url_for('users.view_content', content_id=content.id) }}" class="btn btn-sm btn-info">View</a>
+                                        <form action="{{ url_for('users.increment_download', content_id=content.id) }}" method="GET" target="_blank" style="display: inline;">
+                                            <button type="submit" class="btn btn-sm btn-primary">Download</button>
+                                        </form>
+                                        <form action="{{ url_for('users.increment_view', content_id=content.id) }}" method="GET" style="display: inline;">
+                                            <button type="submit" class="btn btn-sm btn-info">View</button>
+                                        </form>
                                     </li>
                                     {% endfor %}
                                 </ul>

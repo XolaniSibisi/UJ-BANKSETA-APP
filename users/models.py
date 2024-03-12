@@ -233,3 +233,40 @@ class Content(db.Model):
     def get_unpublished_by_username(self, username):
         user = User.query.filter_by(username=username).first()
         return Content.query.filter_by(published=False, user_id=user.id).all()
+    
+class Counter(db.Model):
+    """
+    A Counter model class.
+    """
+
+    __tablename__ = 'counter'
+
+    id = db.Column(db.String(38), primary_key=True)
+    name = db.Column(db.String(200), unique=True)
+    count = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
+    def __repr__(self):
+        return f"Counter(id={self.id}, name={self.name}, count={self.count})"
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+        
+    def increment(self):
+        self.count += 1
+        db.session.commit()
+        
+    def decrement(self):
+        self.count -= 1
+        db.session.commit()
+        
+    def get_absolute_url(self):
+        return url_for('users.counter', counter_id=self.id)
+    
+    def get_edit_url(self):
+        return url_for('users.edit_counter', counter_id=self.id)
+    
+    def get_delete_url(self):
+        return url_for('users.delete_counter', counter_id=self.id)

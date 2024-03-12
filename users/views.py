@@ -10,7 +10,7 @@ from flask_login import (
 )
 
 from users.extensions import database as db, csrf
-from users.models import User, Profile, Content, Contact
+from users.models import User, Profile, Content, Contact, Counter
 from users.forms import (
     RegisterForm,
     LoginForm,
@@ -49,7 +49,6 @@ users = Blueprint('users', __name__, template_folder='templates')
 
 CORS(users)
 
-
 @users.route('/register', methods=['GET', 'POST'], strict_slashes=False)
 def register():
     form = RegisterForm()
@@ -83,10 +82,17 @@ def register():
             flash(
                 "A confirmation link sent to your email. Please verify your account.", 'info')
             return redirect(url_for('users.login'))
+            
+            # Increment the appropriate counter
+            if role == 'student':
+                Counter.query.filter_by(name='num_students').update({'count': Counter.count + 1})
+            elif role == 'volunteer':
+                Counter.query.filter_by(name='num_volunteers').update({'count': Counter.count + 1})
+            
+            db.session.commit()
         except Exception as e:
             flash("Something went wrong", 'error')
             print("Exception occurred during user registration:")
-            traceback.print_exc()  # Print the traceback for debugging
             return redirect(url_for('users.register'))
 
     return render_template('register.html', form=form)
@@ -497,7 +503,7 @@ def upload_content():
         db.session.commit()
 
         flash('Content uploaded successfully', 'success')
-        return redirect(url_for('users.upload_content'))
+        return redirect(url_for('users.dashboard'))
 
     return render_template('upload_content.html', form=form)
 
@@ -522,7 +528,6 @@ def convert_to_embed_link(link):
 
 # Define the view_content endpoint
 @users.route('/view_content/<content_id>')
-@cross_origin(origin=['http://127.0.0.1:5000', 'http://localhost:5000', 'https://www.youtube.com'])
 @login_required
 def view_content(content_id):
     # Fetch the content data from the database based on the content_id
@@ -532,6 +537,25 @@ def view_content(content_id):
         content.embed_link = convert_to_embed_link(content.link)
         # Render the view_content.html template and pass the content data
         return render_template('view_content.html', content=content)
+    else:
+        # If content is not found, redirect to a home page
+        flash('Content not found', 'error')
+        return redirect(url_for('users.home'))
+    
+@users.route('/increment_view/<content_id>')
+@login_required
+def increment_view(content_id):
+    # Fetch the content data from the database based on the content_id
+    content = Content.query.get(content_id)
+    if content:
+        # Increment the total_views counter
+        total_views_counter = Counter.query.filter_by(name='total_views').first()
+        if total_views_counter:
+            total_views_counter.count += 1
+            db.session.commit()
+        
+        # Redirect back to the view_content page
+        return redirect(url_for('users.view_content', content_id=content_id))
     else:
         # If content is not found, redirect to a home page
         flash('Content not found', 'error')
@@ -572,10 +596,31 @@ def download_content(content_id):
             filename = title + file_extension
 
             return send_file(temp_file.name, as_attachment=True, download_name=filename)
+        
         else:
             
             flash('Failed to download content.', 'error')
             return redirect(url_for('users.home'))
+
+@users.route('/increment_download/<content_id>')
+@login_required
+def increment_download(content_id):
+    # Fetch the content data from the database based on the content_id
+    content = Content.query.get(content_id)
+    if content:
+        # Increment the total_downloads counter
+        total_downloads_counter = Counter.query.filter_by(name='total_downloads').first()
+        if total_downloads_counter:
+            total_downloads_counter.count += 1
+            db.session.commit()
+        
+        # Redirect back to the view_content page
+        return redirect(url_for('users.download_content', content_id=content_id))
+    else:
+        # If content is not found, redirect to a home page
+        flash('Content not found', 'error')
+        return redirect(url_for('users.home'))
+
 
 # Admin dashboard route
 @users.route('/dashboard', methods=['GET'])
@@ -583,7 +628,20 @@ def download_content(content_id):
 def dashboard():
     # Fetch all content from the database
     all_content = Content.query.all()
-    return render_template('dashboard.html', all_content=all_content)
+    
+    # Fetch counter values from the database
+    num_students_counter = Counter.query.filter_by(name='num_students').first()
+    num_students = num_students_counter.count if num_students_counter else 0
+
+    num_volunteers_counter = Counter.query.filter_by(name='num_volunteers').first()
+    num_volunteers = num_volunteers_counter.count if num_volunteers_counter else 0
+
+    total_downloads_counter = Counter.query.filter_by(name='total_downloads').first()
+    total_downloads = total_downloads_counter.count if total_downloads_counter else 0
+
+    total_views_counter = Counter.query.filter_by(name='total_views').first()
+    total_views = total_views_counter.count if total_views_counter else 0
+    return render_template('dashboard.html', all_content=all_content, num_students=num_students, num_volunteers=num_volunteers, total_downloads=total_downloads, total_views=total_views)
 
 # Route to edit content
 @users.route('/edit_content/<content_id>', methods=['GET'])
@@ -595,7 +653,7 @@ def edit_content(content_id):
     return render_template('edit_content.html', content=content)
 
 @users.route('/edit_content', methods=['POST'])
-# @login_required
+@login_required
 def update_content():
     # Fetch the content by ID
     content_id = request.form.get('content_id')
