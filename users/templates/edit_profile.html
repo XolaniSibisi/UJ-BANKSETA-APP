@@ -13,10 +13,10 @@
                 <div class="d-flex flex-column align-items-center text-center p-3">
                     {% if profile and profile.avator %}
                     <img class="rounded-circle mt-5 mb-3" style="object-fit: cover;width: 180px;height: 180px;"
-                        src="{{ url_for('static', filename='assets/profile/'+profile.avator) }}">
+                        src="{{ url_for('static', filename='assets/profile/'+profile.avator) }}" alt="Avatar">
                     {% else %}
                     <img class="rounded-circle mt-5 mb-3" style="object-fit: cover;width: 180px;height: 180px;"
-                        src="{{ url_for('static', filename='assets/images/default_avator.jpg') }}">
+                        src="{{ url_for('static', filename='assets/images/default_avator.jpg') }}", alt="Avatar">
                     {% endif %}
                     <h4 class="font-weight-bold">{{ current_user.first_name }} {{ current_user.last_name }}</h4>
                     <p class="text-black-50">@{{ current_user.username }}</p>

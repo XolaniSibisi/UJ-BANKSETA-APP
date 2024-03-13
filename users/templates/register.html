@@ -35,12 +35,13 @@
               {{ render_field(form.password, placeholder="Choose your password") }}
               {{ render_field(form.remember) }}
               {{ render_field(form.submit, class="w-100") }}
+
+              <p class="text-center mt-3">
+                Have an account? <a href="{{ url_for('users.login') }}" class="text-decoration-none">Log In</a>
+              </p>
             </form>
           </div>
         </div>
-        <p class="text-center">
-          Have an account? <a href="{{ url_for('users.login') }}" class="text-decoration-none">Log In</a>
-        </p>
       </section>
     </div>
   </div>

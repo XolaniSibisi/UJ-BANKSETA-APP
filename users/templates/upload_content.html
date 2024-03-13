@@ -52,8 +52,8 @@
 
 <script>
     // Define the dictionaries containing topics and subtopics
-    const mathsCatalogue = {{ maths_catalogue|tojson }};
-    const scienceCatalogue = {{ physical_science_catalogue|tojson }};
+    const mathsCatalogue = {{ maths_catalogue|tojson|safe }};
+    const scienceCatalogue = {{ physical_science_catalogue|tojson|safe }};
 
     // Function to populate the topics based on the selected STEM
     function populateTopics() {

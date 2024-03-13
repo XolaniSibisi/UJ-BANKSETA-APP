@@ -1,6 +1,7 @@
 from flask import abort, render_template, request, redirect, url_for, flash, jsonify
 from flask_wtf.csrf import generate_csrf
 from flask import Blueprint, send_file
+from sqlalchemy.orm import joinedload
 import logging
 from flask_login import (
     current_user,
@@ -98,7 +99,6 @@ def register():
 
     return render_template('register.html', form=form)
 
-
 @users.route('/login', methods=['GET', 'POST'], strict_slashes=False)
 def login():
     form = LoginForm()
@@ -124,13 +124,15 @@ def login():
                 return redirect(url_for('users.login'))
 
             login_user(user, remember=True, duration=timedelta(days=15))
-            # flash("You are logged in successfully.", 'success')
-            return redirect(url_for('users.profile'))
+            flash("You are logged in successfully.", 'success')
 
-        return redirect(url_for('users.login'))
+            # Redirect admin users to the dashboard
+            if user.role == 'admin':
+                return redirect(url_for('users.dashboard'))
+            else:
+                return redirect(url_for('users.profile'))
 
     return render_template('login.html', form=form)
-
 
 @users.route('/account/confirm?token=<string:token>', methods=['GET', 'POST'], strict_slashes=False)
 def confirm_account(token=None):
@@ -343,8 +345,34 @@ def profile():
 
     return render_template('profile.html', form=form, profile=profile)
 
+@users.route('/admin/profile', methods=['GET'])
+def admin_profile():
+    # Retrieve users with role 'student' or 'volunteer' from the database
+    students = User.query.options(joinedload(User.profile)).filter_by(role='student').all()
+    volunteers = User.query.options(joinedload(User.profile)).filter_by(role='volunteer').all()
+
+    return render_template('admin_profile.html', students=students, volunteers=volunteers)
+
+@users.route('/view_user/<user_id>', methods=['GET'], strict_slashes=False)
+@login_required
+def view_user(user_id):
+    user = User.query.get_or_404(user_id)
+    return render_template('view_user.html', user=user, profile=profile)
+
+@users.route('/delete_user/<user_id>', methods=['POST'], strict_slashes=False)
+@login_required
+def delete_user(user_id):
+    user = User.query.get_or_404(user_id)
+    if not user:
+        flash("User not found.", 'error')
+    else:
+        db.session.delete(user)
+        db.session.commit()
+        flash("User deleted successfully.", 'success')
+    return redirect(url_for('users.admin_profile'))
 
 @users.route('/contact', methods=['GET', 'POST'])
+@login_required
 def contact():
     form = ContactForm()
     if form.validate_on_submit():
@@ -366,6 +394,7 @@ def contact():
     return render_template('contact.html', form=form)
 
 @users.route('/contact/success')
+@login_required
 def contact_success():
     return render_template('contact_success.html')
 

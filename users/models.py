@@ -43,6 +43,15 @@ class User(db.Model, UserMixin):
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
     profile = db.Relationship('Profile', backref='user', cascade='save-update, merge, delete')
+    
+    def is_admin(self):
+        return self.role == 'admin'
+
+    def is_student(self):
+        return self.role == 'student'
+
+    def is_volunteer(self):
+        return self.role == 'volunteer'
 
 
     def send_confirmation(self):
