@@ -11,6 +11,7 @@ from flask_login import (
 
 from users.extensions import database as db, csrf
 from users.models import User, Profile, Content, Contact, Counter
+from users.catalogues import maths_catalogue, physical_science_catalogue
 from users.forms import (
     RegisterForm,
     LoginForm,
@@ -477,25 +478,41 @@ def science_content():
 
 
 # Define a route to handle the upload_content.html template
-@users.route('/upload_content', methods=['POST', 'GET'])
+@users.route('/upload_content', methods=['GET', 'POST'])
 @login_required
 def upload_content():
     form = UploadContentForm()
+
+    # Populate topic choices based on selected STEM
+    if form.stem.data == 'maths':
+        form.topic.choices = [(chapter, chapter) for chapter in maths_catalogue.keys()]
+    elif form.stem.data == 'science':
+        form.topic.choices = [(chapter, chapter) for chapter in physical_science_catalogue.keys()]
+
+    # Populate subtopic choices based on selected topic
+    if form.topic.data:
+        if form.stem.data == 'maths' and form.topic.data in maths_catalogue:
+            form.subtopic.choices = [(subtopic, subtopic) for subtopic in maths_catalogue[form.topic.data]]
+        elif form.stem.data == 'science' and form.topic.data in physical_science_catalogue:
+            form.subtopic.choices = [(subtopic, subtopic) for subtopic in physical_science_catalogue[form.topic.data]]
+
     if form.validate_on_submit():
-        title = form.title.data
         content_type = form.content_type.data
         link = form.link.data
         stem = form.stem.data
+        topic = form.topic.data
+        subtopic = form.subtopic.data
 
         # Get the current user's ID
         user_id = current_user.id
 
         # Create a new Content object
         new_content = Content(
-            title=title,
             content_type=content_type,
             link=link,
             stem=stem,
+            topic=topic,
+            subtopic=subtopic,
             user_id=user_id
         )
 
@@ -505,7 +522,8 @@ def upload_content():
         flash('Content uploaded successfully', 'success')
         return redirect(url_for('users.dashboard'))
 
-    return render_template('upload_content.html', form=form)
+    return render_template('upload_content.html', form=form, maths_catalogue=maths_catalogue, physical_science_catalogue=physical_science_catalogue)
+
 
 # Define a route to handle the no_content.html template
 @users.route('/no_content', methods=['GET'])
@@ -660,7 +678,8 @@ def update_content():
     content = Content.query.get_or_404(content_id)
 
     # Update the content data
-    content.title = request.form.get('title')
+    content.topic = request.form.get('topic')
+    content.subtopic = request.form.get('subtopic')
     content.content_type = request.form.get('content_type')
     content.link = request.form.get('link')
     content.stem = request.form.get('stem')

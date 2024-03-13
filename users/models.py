@@ -175,7 +175,8 @@ class Content(db.Model):
     __tablename__ = 'content'
 
     id = db.Column(db.String(38), primary_key=True, default=unique_uid, unique=True, nullable=False)
-    title = db.Column(db.String(200), nullable=False)
+    topic = db.Column(db.String(200), nullable=False)
+    subtopic = db.Column(db.String(200), nullable=False)
     content_type = db.Column(db.String(20), nullable=False)
     link = db.Column(db.String(250), nullable=False)
     stem = db.Column(db.String(250))
@@ -186,7 +187,7 @@ class Content(db.Model):
     user_id = db.Column(db.String(38), db.ForeignKey('user.id', ondelete="CASCADE"), nullable=False)
 
     def __repr__(self):
-        return f"Content(id={self.id}, title={self.title}, content_type={self.content_type}, link={self.link}, stem={self.stem})"
+        return f"Content(id={self.id}, topic={self.topic}, subtopic={self.subtopic}, content_type={self.content_type}, link={self.link}, stem={self.stem})"
 
     def save(self):
         db.session.add(self)

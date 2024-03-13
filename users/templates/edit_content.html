@@ -11,20 +11,24 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="content_id" value="{{ content.id }}">
         <div class="mb-3">
-            <label for="title" class="form-label">Title</label>
-            <input type="text" class="form-control" id="title" name="title" value="{{ content.title }}">
+            <label for="stem" class="form-label">Stem</label>
+            <input type="text" class="form-control" id="stem" name="stem" value="{{ content.stem }}">
         </div>
         <div class="mb-3">
-            <label for="content_type" class="form-label">Content Type</label>
-            <input type="text" class="form-control" id="content_type" name="content_type" value="{{ content.content_type }}">
+            <label for="topic" class="form-label">Topic</label>
+            <input type="text" class="form-control" id="topic" name="topic" value="{{ content.topic }}">
+        </div>
+        <div class="mb-3">
+            <label for="subtopic" class="form-label">Subtopic</label>
+            <input type="text" class="form-control" id="subtopic" name="subtopic" value="{{ content.subtopic }}">
         </div>
         <div class="mb-3">
             <label for="link" class="form-label">Link</label>
             <input type="text" class="form-control" id="link" name="link" value="{{ content.link }}">
         </div>
         <div class="mb-3">
-            <label for="stem" class="form-label">Stem</label>
-            <input type="text" class="form-control" id="stem" name="stem" value="{{ content.stem }}">
+            <label for="content_type" class="form-label">Content Type</label>
+            <input type="text" class="form-control" id="content_type" name="content_type" value="{{ content.content_type }}">
         </div>
         <button type="submit" class="btn btn-primary">Update</button> <a href="{{ url_for('users.dashboard') }}" class="btn btn-dark">Cancel</a>
     </form>

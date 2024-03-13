@@ -118,9 +118,17 @@ class ContactForm(FlaskForm):
   submit = SubmitField("Send")
   
 class UploadContentForm(FlaskForm):
-    title = StringField('Title', validators=[InputRequired()])
-    content_type = SelectField('Content Type', choices=[('textbook', 'Textbook'), ('past_year_paper', 'Past Year Paper'), ('worksheet', 'Worksheet'), ('study_guide', 'Study Guide'), ('additional_problem', 'Additional Problem'), ('video', 'Video')], validators=[InputRequired()])
+    content_type = SelectField('Content Type', choices=[
+        ('textbook', 'Textbook'), 
+        ('past_year_paper', 'Past Year Paper'), 
+        ('worksheet', 'Worksheet'), 
+        ('study_guide', 'Study Guide'), 
+        ('additional_problem', 'Additional Problem'), 
+        ('video', 'Video')
+    ], validators=[InputRequired()])
     link = StringField('Link', validators=[InputRequired()])
     stem = SelectField('STEM', choices=[('maths', 'Maths'), ('science', 'Science')], validators=[InputRequired()])
+    topic = SelectField('Topic', choices=[], validators=[InputRequired()])
+    subtopic = SelectField('Subtopic', choices=[], validators=[InputRequired()])
     published = BooleanField('Published', default=True)
  

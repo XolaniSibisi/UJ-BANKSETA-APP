@@ -33,7 +33,8 @@
         <thead>
             <tr>
                 <th>#</th>
-                <th>Title</th>
+                <th>Topic</th>
+                <th>Subtopic</th>
                 <th>Content Type</th>
                 <th>Link</th>
                 <th>Subject</th>
@@ -44,7 +45,8 @@
             {% for content in all_content %}
             <tr>
                 <td>{{ content.id }}</td>
-                <td>{{ content.title }}</td>
+                <td>{{ content.topic }}</td>
+                <td>{{ content.subtopic }}</td>
                 <td>{{ content.content_type }}</td>
                 <td>{{ content.link }}</td>
                 <td>{{ content.stem }}</td>

@@ -24,25 +24,48 @@
                         <div class="card h-100 mt-4">
                             <div class="card-body">
                                 <h5 class="card-title text-center">{{ content_type|upper }}</h5>
-                                <ul class="list-unstyled mt-4">
+                                <ul class="list-styled mt-4">
+                                    {% set current_topic = None %}
+                                    {% set current_subtopics = [] %}
                                     {% for content in content_list %}
-                                    <li class="mt-2">
-                                        <a href="{{ content.link }}">{{ content.title }}</a>
-                                        <form action="{{ url_for('users.increment_download', content_id=content.id) }}" method="GET" target="_blank" style="display: inline;">
-                                            <button type="submit" class="btn btn-sm btn-primary">Download</button>
-                                        </form>
-                                        <form action="{{ url_for('users.increment_view', content_id=content.id) }}" method="GET" style="display: inline;">
-                                            <button type="submit" class="btn btn-sm btn-info">View</button>
-                                        </form>
-                                    </li>
+                                        {% if current_topic != content.topic %}
+                                            {% if current_subtopics %}
+                                                <li class="mt-2">
+                                                    {% for subtopic in current_subtopics %}
+                                                        <a href="{{ subtopic.link }}">{{ subtopic.subtopic }}</a>{% if not loop.last %}, {% endif %}
+                                                    {% endfor %}
+                                                </li>
+                                                {% set current_subtopics = [] %}
+                                            {% endif %}
+                                            <li class="mt-2">
+                                                <h6>{{ content.topic }}</h6>
+                                                <a href="{{ content.link }}">{{ content.subtopic }}</a>
+                                                <form action="{{ url_for('users.increment_download', content_id=content.id) }}" method="GET" target="_blank" style="display: inline;">
+                                                    <button type="submit" class="btn btn-sm btn-primary">Download</button>
+                                                </form>
+                                                <form action="{{ url_for('users.increment_view', content_id=content.id) }}" method="GET" style="display: inline;">
+                                                    <button type="submit" class="btn btn-sm btn-info">View</button>
+                                                </form>
+                                            </li>
+                                            {% set current_topic = content.topic %}
+                                        {% else %}
+                                            {% set _ = current_subtopics.append(content) %}
+                                        {% endif %}
                                     {% endfor %}
+                                    {% if current_subtopics %}
+                                        <li class="mt-2">
+                                            {% for subtopic in current_subtopics %}
+                                                <a href="{{ subtopic.link }}">{{ subtopic.subtopic }}</a>{% if not loop.last %}, {% endif %}
+                                            {% endfor %}
+                                        </li>
+                                    {% endif %}
                                 </ul>
                             </div>
                         </div>
                     </div>
                 {% endfor %}
             {% else %}
-            {% include 'no_content.html' %}
+                {% include 'no_content.html' %}
             {% endif %}
         </div>
     </div>
