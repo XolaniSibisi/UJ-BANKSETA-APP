@@ -1,6 +1,7 @@
 from flask_wtf.form import FlaskForm
 from flask_wtf.file import FileAllowed, FileSize
 from flask_wtf.recaptcha import RecaptchaField
+from flask_datepicker import datepicker
 from wtforms.fields import (
     StringField,
     PasswordField,
@@ -9,7 +10,9 @@ from wtforms.fields import (
     SubmitField,
     FileField,
     TextAreaField,
-    SelectField
+    SelectField,
+    DateField,
+    TimeField
 )
 from wtforms.validators import (
     DataRequired,
@@ -158,3 +161,15 @@ class UploadContentForm(FlaskForm):
     subtopic = SelectField('Subtopic', choices=[],
                            validators=[InputRequired()])
     published = BooleanField('Published', default=True)
+    
+class CreateSlotForm(FlaskForm):
+    stem = SelectField('STEM', choices=[
+                       ('maths', 'Maths'), ('science', 'Science')], validators=[InputRequired()])
+    topic = SelectField('Topic', choices=[], validators=[InputRequired()])
+    subtopic = SelectField('Subtopic', choices=[],
+                           validators=[InputRequired()])
+    date = DateField('Date', validators=[DataRequired()], 
+                     format=['%m-%d-%Y', '%Y-%m-%d', '%m/%d/%Y', '%Y/%m/%d', '%m.%d.%Y', '%Y.%m.%'])
+    start_time = TimeField('Start Time', validators=[DataRequired()], format='%H:%M')
+    end_time = TimeField('End Time', validators=[DataRequired()], format='%H:%M')
+    submit = SubmitField('Create Slot')

@@ -1,3 +1,40 @@
 {% extends "base.html" %}
 {% from 'bootstrap5/utils.html' import render_messages %}
 {% block title %}Live Classes{% endblock %}
+
+
+{% block body %}
+<main class="my-5">
+    <div class="container">
+        <h1 class="mt-5 mb-4 text-center" style="padding-top: 2.2rem;">Live Classes</h1>
+        <div class="row">
+            {% for slot in slots %}
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3 text-center">{{ slot.topic }}</h5>
+                        <h6 class="card-subtitle mb-3">Subtopic: {{ slot.subtopic }}</h6>
+                        <p class="card-text">Date: {{ slot.date }}</p>
+                        <p class="card-text">Time: {{ slot.start_time }} - {{slot.end_time}}</p>
+                        {% if current_user.role == 'student' %}
+                            <div style="display: flex; justify-content: center;">
+                            <a href="{{ url_for('users.attend_event', slot_id=slot.id) }}" class="btn btn-primary">Attend</a>
+                            </div>
+                        {% elif current_user.role == 'volunteer' %}
+                            <div style="display: flex; justify-content: center;">
+                            <a href="{{ url_for('users.take_slot', slot_id=slot.id) }}" class="btn btn-primary">Take Slot</a>
+                            </div>
+                        {% else %}
+                           <div style="display: flex; justify-content: center;">
+                            <a href="{{ url_for('users.edit_slot', slot_id=slot.id) }}" class="btn btn-primary" style="margin-right: 5px;">Edit</a>
+                            <a href="{{ url_for('users.delete_slot', slot_id=slot.id) }}" class="btn btn-danger">Delete</a>
+                           </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</main>
+{% endblock %}

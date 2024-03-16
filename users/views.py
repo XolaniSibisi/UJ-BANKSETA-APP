@@ -11,7 +11,7 @@ from flask_login import (
 )
 
 from users.extensions import database as db, csrf
-from users.models import User, Profile, Content, Contact, Counter
+from users.models import User, Profile, Content, Contact, Counter, Slots
 from users.catalogues import maths_catalogue, physical_science_catalogue
 from users.forms import (
     RegisterForm,
@@ -22,7 +22,8 @@ from users.forms import (
     ChangeEmailForm,
     ContactForm,
     UploadContentForm,
-    EditUserProfileForm
+    EditUserProfileForm,
+    CreateSlotForm
 )
 from users.utils import (
     unique_security_token,
@@ -48,6 +49,7 @@ This accounts blueprint defines routes and templates related to user management
 within our application.
 """
 users = Blueprint('users', __name__, template_folder='templates')
+
 
 CORS(users)
 
@@ -76,25 +78,13 @@ def register():
                 password=password
             )
             user.set_password(password)
-
-            if role == 'admin':
-                user.is_superuser = True  # Assign superuser privileges
             user.save()
             user.send_confirmation()
-            flash(
-                "A confirmation link sent to your email. Please verify your account.", 'info')
+            flash("A confirmation link sent to your email. Please verify your account.", 'info')
             return redirect(url_for('users.login'))
             
-            # Increment the appropriate counter
-            if role == 'student':
-                Counter.query.filter_by(name='num_students').update({'count': Counter.count + 1})
-            elif role == 'volunteer':
-                Counter.query.filter_by(name='num_volunteers').update({'count': Counter.count + 1})
-            
-            db.session.commit()
         except Exception as e:
             flash("Something went wrong", 'error')
-            print("Exception occurred during user registration:")
             return redirect(url_for('users.register'))
 
     return render_template('register.html', form=form)
@@ -346,18 +336,50 @@ def profile():
     return render_template('profile.html', form=form, profile=profile)
 
 @users.route('/admin/profile', methods=['GET'])
-def admin_profile():
-    # Retrieve users with role 'student' or 'volunteer' from the database
-    students = User.query.options(joinedload(User.profile)).filter_by(role='student').all()
-    volunteers = User.query.options(joinedload(User.profile)).filter_by(role='volunteer').all()
-
-    return render_template('admin_profile.html', students=students, volunteers=volunteers)
-
-@users.route('/view_user/<user_id>', methods=['GET'], strict_slashes=False)
 @login_required
+def admin_profile():
+    if current_user.role != 'admin':
+        abort(403)  # Forbidden: Only admins can access this page
+    
+    # Fetch profiles for both students and volunteers
+    students = User.query.filter_by(role='student').all()
+    volunteers = User.query.filter_by(role='volunteer').all()
+
+    # Create dictionaries to store profiles for both user types
+    student_profiles = {}
+    volunteer_profiles = {}
+
+    # Populate student profiles
+    for student in students:
+        profile = Profile.query.filter_by(user_id=student.id).first()
+        student_profiles[student] = profile
+
+    # Populate volunteer profiles
+    for volunteer in volunteers:
+        profile = Profile.query.filter_by(user_id=volunteer.id).first()
+        volunteer_profiles[volunteer] = profile
+
+    return render_template('admin_profile.html', students=students, volunteers=volunteers,
+                           student_profiles=student_profiles, volunteer_profiles=volunteer_profiles)
+
+
+@users.route('/view_user/<user_id>', methods=['GET'])
 def view_user(user_id):
-    user = User.query.get_or_404(user_id)
+    user = User.query.get(user_id)
+    if not user:
+        flash("User not found.", 'error')
+        return redirect(url_for('users.admin_profile'))
+
+    # Retrieve the profile based on the user type
+    if user.role == 'student':
+        profile = Profile.query.filter_by(user_id=user_id).first()
+    elif user.role == 'volunteer':
+        profile = Profile.query.filter_by(user_id=user_id).first()
+    else:
+        profile = None  # Handle other roles or scenarios if needed
+
     return render_template('view_user.html', user=user, profile=profile)
+
 
 @users.route('/delete_user/<user_id>', methods=['POST'], strict_slashes=False)
 @login_required
@@ -452,12 +474,6 @@ def edit_profile():
 @login_required
 def forum():
     return render_template('forum.html')
-
-
-@users.route('/live_classes', methods=['GET', 'POST'], strict_slashes=False)
-@login_required
-def live_classes():
-    return render_template('live_classes.html')
 
 
 @users.route('/related_links', methods=['GET', 'POST'], strict_slashes=False)
@@ -734,3 +750,162 @@ def delete_content(content_id):
     flash('Content deleted successfully.', 'success')
     return redirect(url_for('users.dashboard'))
 
+# Route to create a teaching slot
+@users.route('/create_slot', methods=['GET', 'POST'])
+@login_required
+def create_slot():
+    form = CreateSlotForm()
+
+    # Populate topic choices based on selected STEM
+    if form.stem.data == 'maths':
+        form.topic.choices = [(chapter, chapter) for chapter in maths_catalogue.keys()]
+    elif form.stem.data == 'science':
+        form.topic.choices = [(chapter, chapter) for chapter in physical_science_catalogue.keys()]
+
+    # Populate subtopic choices based on selected topic
+    if form.topic.data:
+        if form.stem.data == 'maths' and form.topic.data in maths_catalogue:
+            form.subtopic.choices = [(subtopic, subtopic) for subtopic in maths_catalogue[form.topic.data]]
+        elif form.stem.data == 'science' and form.topic.data in physical_science_catalogue:
+            form.subtopic.choices = [(subtopic, subtopic) for subtopic in physical_science_catalogue[form.topic.data]]
+
+    if form.validate_on_submit():
+        stem = form.stem.data
+        topic = form.topic.data
+        subtopic = form.subtopic.data
+        date = form.date.data
+        start_time = form.start_time.data
+        end_time = form.end_time.data
+
+        # Get the current user's ID
+        user_id = current_user.id
+
+        # Create a new Slots object
+        new_slot = Slots(
+            topic=topic,
+            subtopic=subtopic,
+            date=date,
+            start_time=start_time,
+            end_time=end_time,
+            stem=stem,
+            user_id=user_id
+        )
+
+        db.session.add(new_slot)
+        db.session.commit()
+
+        # Retrieve all volunteer users
+        volunteers = User.query.filter_by(role='volunteer').all()
+
+        # Send email notification to each volunteer
+        for volunteer in volunteers:
+            msg = Message('New Teaching Slot Created',
+                          sender='systemsprogramming95@gmail.com',
+                          recipients=[volunteer.email])
+            msg.body = f'Hi {volunteer.username},\n\nA new teaching slot has been created.\n\nTopic: {topic}\nSubtopic: {subtopic}\nDate: {date}\nStart Time: {start_time}\nEnd Time: {end_time}'
+            mail.send(msg)
+
+        flash('Teaching slot created successfully. Email notifications sent to volunteers.', 'success')
+        return redirect(url_for('users.dashboard'))
+
+    return render_template('create_slot.html', form=form, maths_catalogue=maths_catalogue, physical_science_catalogue=physical_science_catalogue)
+
+@users.route('/delete_slot/<slot_id>', methods=['POST'], strict_slashes=False)
+@login_required
+def delete_slot(slot_id):
+    slot = Slots.query.get_or_404(slot_id)
+    if not slot:
+        flash('Teaching slot not found.', 'error')
+    else:
+        db.session.delete(slot)
+        db.session.commit()
+        flash('Teaching slot deleted successfully.', 'success')
+    return redirect(url_for('users.dashboard'))
+
+@users.route('/edit_slot/<slot_id>', methods=['GET'], strict_slashes=False)
+@login_required
+def edit_slot(slot_id):
+    # Fetch the slot by ID
+    slot = Slots.query.get_or_404(slot_id)
+
+    return render_template('edit_slot.html', slot=slot)
+
+@users.route('/edit_slot', methods=['POST'], strict_slashes=False)
+@login_required
+def update_slot():
+    # Fetch the slot by ID
+    slot_id = request.form.get('slot_id')
+    slot = Slots.query.get_or_404(slot_id)
+
+    # Update the slot data
+    slot.topic = request.form.get('topic')
+    slot.subtopic = request.form.get('subtopic')
+    slot.stem = request.form.get('stem')
+    slot.date = request.form.get('date')
+    slot.start_time = request.form.get('start_time')
+    slot.end_time = request.form.get('end_time')
+
+    # Save the updated slot
+    db.session.commit()
+
+    flash('Teaching slot updated successfully.', 'success')
+    return redirect(url_for('users.dashboard'))
+
+@users.route('/live_classes', methods=['GET'], strict_slashes=False)
+@login_required
+def live_classes():
+    # Retrieve all slots
+    slots = Slots.query.all()
+    return render_template('live_classes.html', slots=slots)
+
+@users.route('/attend_event/<slot_id>', methods=['GET'], strict_slashes=False)
+@login_required
+def attend_event(slot_id):
+    slot = Slots.query.get(slot_id)
+    if not slot:
+        flash('Teaching slot not found.', 'error')
+        return redirect(url_for('users.dashboard'))
+
+    # Check if the current user is a student
+    if current_user.role != 'student':
+        flash('You are not authorized to attend teaching slots.', 'error')
+        return redirect(url_for('users.live_classes'))
+
+    # Get the profile of the current user
+    profile = Profile.query.filter_by(user_id=current_user.id).first()
+    if not profile:
+        flash('Profile not found.', 'error')
+        return redirect(url_for('users.live_classes'))
+
+    # Assign the slot to the current student profile
+    profile.attending_slots.append(slot)
+    profile.save()
+
+    flash('Teaching slot added successfully to your profile.', 'success')
+    return redirect(url_for('users.profile'))
+    
+    
+@users.route('/take_slot/<slot_id>', methods=['GET'], strict_slashes=False)
+def take_slot(slot_id):
+    slot = Slots.query.get(slot_id)
+    if not slot:
+        flash('Teaching slot not found.', 'error')
+        return redirect(url_for('users.dashboard'))
+
+    # Check if the current user is a volunteer
+    if current_user.role != 'volunteer':
+        flash('You are not authorized to take teaching slots.', 'error')
+        return redirect(url_for('users.live_classes'))
+
+    # Get the profile of the current user
+    profile = Profile.query.filter_by(user_id=current_user.id).first()
+    if not profile:
+        flash('Profile not found.', 'error')
+        return redirect(url_for('users.live_classes'))
+
+    # Assign the slot to the current volunteer profile
+    profile.teaching_slots.append(slot)
+    profile.save()
+
+    flash('Teaching slot taken successfully.', 'success')
+    return redirect(url_for('users.profile'))

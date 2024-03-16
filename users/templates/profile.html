@@ -6,9 +6,14 @@
 {% block body %}
 
 <div class="my-5">
-    <div class="container-fluid">
-        {{ render_messages(dismissible=True, dismiss_animate=True) }}
-        <div class="container">
+    <div class="container">
+        <div class="mt-4">
+            <div class="row">
+                <div class="col-md-12">
+                    {{ render_messages(dismissible=True, dismiss_animate=True) }}
+                </div>
+            </div>
+            <div class="row">
                 <div class="col-md-4 mt-5">
                     <div class="d-flex justify-content-center">
                         {% if profile and profile.avator %}
@@ -21,12 +26,10 @@
                         {% endif %}
                     </div>
                 </div>
-                <div class="col-md-6 m-5">
-                    <div class="row my-3 mt-5">
-                        <div class="mb-3">
-                            <h2 class="mb-1">{{ current_user.first_name }} {{ current_user.last_name }}</h2>
-                            <p>@{{ current_user.username }}</p>
-                        </div>
+                <div class="col-md-6 mt-5">
+                    <div class="my-3">
+                        <h2 class="mb-1">{{ current_user.first_name }} {{ current_user.last_name }}</h2>
+                        <p>@{{ current_user.username }}</p>
                         <h6 class="text-muted mb-4">{{ profile.bio }}</h6>
                         <div class="row">
                             <label class="fw-bold">First Name</label>
@@ -42,10 +45,10 @@
                         </div>
                     </div>
                     <div>
-                        <a href="{{ url_for('users.edit_profile') }}" type="submit" class="btn btn-primary"
-                            value="Edit Profile">Edit Profile</a>
+                        <a href="{{ url_for('users.edit_profile') }}" class="btn btn-primary">Edit Profile</a>
                     </div>
                 </div>
+            </div>
         </div>
     </div>
 </div>
@@ -66,4 +69,5 @@
     // Call the function when the page loads
     window.onload = hideMessages;
 </script>
+
 {% endblock %}

@@ -26,6 +26,8 @@ def create_app():
     config_blueprint(app)
     # configure error handlers.
     config_errorhandler(app)
+    
+
 
     return app
 

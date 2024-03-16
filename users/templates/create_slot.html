@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% from 'bootstrap5/form.html' import render_field %}
+{% from 'bootstrap5/utils.html' import render_messages %}
+{% block title %}Create Slot{% endblock %}
+
+{% block body %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 mt-5">
+            <h1 class="mt-2 mb-4 text-center">Create Slot</h1>
+            <form method="post" action="{{ url_for('users.create_slot') }}" style="margin-bottom: 100px;">
+                {{ render_messages() }}
+                {{ form.hidden_tag() }}
+                {{ form.csrf_token() }}
+                <!-- STEM Radio Buttons -->
+                <div class="mb-3">
+                    <label for="stem" class="form-label">Subject</label><br>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="stem" id="math_stem" value="maths" checked>
+                        <label class="form-check-label" for="math_stem">Math</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="stem" id="science_stem" value="science">
+                        <label class="form-check-label" for="science_stem">Science</label>
+                    </div>
+                </div>
+
+                <!-- Topic Field -->
+                <div class="mb-3">
+                    <label for="topic" class="form-label">Topic</label>
+                    <select name="topic" id="topic" class="form-select">
+                        <!-- Options will be dynamically populated -->
+                    </select>
+                </div>
+
+                <!-- Subtopic Field -->
+                <div class="mb-3">
+                    <label for="subtopic" class="form-label">Subtopic</label>
+                    <select name="subtopic" id="subtopic" class="form-select">
+                        <!-- Options will be dynamically populated -->
+                    </select>
+                </div>
+                    {{ render_field(form.date, class="form-control mb-3", id="date") }}
+                    {{ render_field(form.start_time, class="form-control mb-3", id="start_time") }}
+                    {{ render_field(form.end_time, class="form-control mb-3", id="end_time") }}
+                    {{ render_field(form.submit, class="btn btn-primary") }}
+            </form>
+        </div>
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+<script
+    src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.en-GB.min.js"></script>
+<!-- Initialize date and time picker -->
+
+<script>
+    // Define the dictionaries containing topics and subtopics
+    const mathsCatalogue = {{ maths_catalogue| tojson | safe }};
+    const scienceCatalogue = {{ physical_science_catalogue| tojson | safe }};
+
+    // Function to populate the topics based on the selected STEM
+    function populateTopics() {
+        const stem = document.querySelector('input[name="stem"]:checked').value;
+        const topicSelect = document.getElementById("topic");
+        topicSelect.innerHTML = "";
+
+        const catalogue = stem === "maths" ? mathsCatalogue : scienceCatalogue;
+        for (const topic in catalogue) {
+            const option = document.createElement("option");
+            option.text = topic;
+            option.value = topic;
+            topicSelect.appendChild(option);
+        }
+
+        // Trigger the subtopic population when the topic changes
+        topicSelect.addEventListener("change", populateSubtopics);
+        populateSubtopics();
+    }
+
+    // Function to populate the subtopics based on the selected topic
+    function populateSubtopics() {
+        const stem = document.querySelector('input[name="stem"]:checked').value;
+        const selectedTopic = document.getElementById("topic").value;
+        const subtopicSelect = document.getElementById("subtopic");
+        subtopicSelect.innerHTML = "";
+
+        const catalogue = stem === "maths" ? mathsCatalogue : scienceCatalogue;
+        for (const subtopic of catalogue[selectedTopic]) {
+            const option = document.createElement("option");
+            option.text = subtopic;
+            option.value = subtopic;
+            subtopicSelect.appendChild(option);
+        }
+    }
+
+    // Call the populateTopics function when the page loads
+    window.onload = populateTopics;
+
+    // Event listeners for radio buttons to update topics and subtopics
+    document.getElementById("math_stem").addEventListener("change", populateTopics);
+    document.getElementById("science_stem").addEventListener("change", populateTopics);
+</script>
+{% endblock %}

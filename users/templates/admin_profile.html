@@ -20,47 +20,48 @@
             <tbody>
                 {% for student in students %}
                 <tr>
-                    <td style="display: flex; justify-content: center; align-items: center;">
-                        {% if profile and profile.avator %}
-                        <img class="rounded-circle" style="width: 35px;height: 35px;"
-                            src="{{ url_for('static', filename='assets/profile/'+profile.avator) }}" alt="Avatar">
-                        {% else %}
-                        <img class="rounded-circle" style="width: 35px;height: 35px;"
-                            src="{{ url_for('static', filename='assets/images/default_avator.jpg') }}" , alt="Avatar">
-                        {% endif %}
-                    </td>
-                    <td>{{ student.username }}</td>
-                    <td>{{ student.email }}</td>
-                    <td>{{ student.role }}</td>
-                    <td class="align-middle">
-                        <div style="display: flex; justify-content: center;">
-                            <a href="{{ url_for('users.view_user', user_id=student.id) }}" class="btn btn-primary"
-                                style="margin-right: 5px;">View</a>
-                            <form action="{{ url_for('users.delete_user', user_id=student.id) }}" method="post"
-                                style="margin-left: 5px; display: inline;">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <input type="hidden" name="student_id" value="{{ student.id }}">
-                                <button type="submit" class="btn btn-danger"
-                                    onclick="return confirm('Are you sure you want to delete this user?')">Delete</button>
-                            </form>
-                        </div>
-                    </td>
+                <td style="display: flex; justify-content: center; align-items: center;">
+                    {% if student_profiles[student] and student_profiles[student].avator %}
+                    <img class="rounded-circle" style="width: 40px;height: 40px;"
+                        src="{{ url_for('static', filename='assets/profile/' + student_profiles[student].avator) }}"
+                        alt="Avatar">
+                    {% else %}
+                    <img class="rounded-circle" style="width: 40px;height: 40px;"
+                        src="{{ url_for('static', filename='assets/images/default_avator.jpg') }}" alt="Avatar">
+                    {% endif %}
+                </td>
+                <td class="text-center">{{ student.username }}</td>
+                <td class="text-center">{{ student.email }}</td>
+                <td class="text-center">{{ student.role }}</td>
+                <td class="align-middle">
+                    <div style="display: flex; justify-content: center;">
+                        <a href="{{ url_for('users.view_user', user_id=student.id) }}" class="btn btn-primary"
+                            style="margin-right: 5px;">View</a>
+                        <form action="{{ url_for('users.delete_user', user_id=student.id) }}" method="post"
+                            style="margin-left: 5px; display: inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="student_id" value="{{ student.id }}">
+                            <button type="submit" class="btn btn-danger"
+                                onclick="return confirm('Are you sure you want to delete this user?')">Delete</button>
+                        </form>
+                    </div>
+                </td>
                 </tr>
                 {% endfor %}
                 {% for volunteer in volunteers %}
                 <tr>
                     <td style="display: flex; justify-content: center; align-items: center;">
-                        {% if profile and profile.avator %}
-                        <img class="rounded-circle" style="width: 35px;height: 35px;"
-                            src="{{ url_for('static', filename='assets/profile/'+profile.avator) }}" alt="Avatar">
+                        {% if volunteer_profiles[volunteer] and volunteer_profiles[volunteer].avator %}
+                        <img class="rounded-circle" style="width: 40px;height: 40px;"
+                            src="{{ url_for('static', filename='assets/profile/'+ volunteer_profiles[volunteer].avator) }}" alt="Avatar">
                         {% else %}
-                        <img class="rounded-circle" style="width: 35px;height: 35px;"
+                        <img class="rounded-circle" style="width: 40px;height: 40px;"
                             src="{{ url_for('static', filename='assets/images/default_avator.jpg') }}" , alt="Avatar">
                         {% endif %}
                     </td>
-                    <td>{{ volunteer.username }}</td>
-                    <td>{{ volunteer.email }}</td>
-                    <td>{{ volunteer.role }}</td>
+                    <td class="text-center">{{ volunteer.username }}</td>
+                    <td class="text-center">{{ volunteer.email }}</td>
+                    <td class="text-center">{{ volunteer.role }}</td>
                     <td class="align-middle">
                         <div style="display: flex; justify-content: center;">
                             <a href="{{ url_for('users.view_user', user_id=volunteer.id) }}" class="btn btn-primary"

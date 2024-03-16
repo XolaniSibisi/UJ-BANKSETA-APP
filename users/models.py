@@ -121,10 +121,15 @@ class Profile(db.Model):
 
     id = db.Column(db.String(38), primary_key=True, default=unique_uid, unique=True, nullable=False)
     bio = db.Column(db.String(200), default='')
-    avator = db.Column(db.String(250), default='')
-
+    avatar = db.Column(db.String(250), default='')
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+    
+    # Define a relationship to the Slots model for attending slots
+    attending_slots = db.relationship('Slots', backref='student_profile', lazy=True, foreign_keys='Slots.student_id')
+    
+    # Define a relationship to the Slots model for teaching slots
+    teaching_slots = db.relationship('Slots', backref='volunteer_profile', lazy=True, foreign_keys='Slots.volunteer_id')
 
     user_id = db.Column(db.String(38), db.ForeignKey('user.id', ondelete="CASCADE"), nullable=False)
 
@@ -280,3 +285,59 @@ class Counter(db.Model):
     
     def get_delete_url(self):
         return url_for('users.delete_counter', counter_id=self.id)
+    
+class Slots(db.Model):
+    """
+    A Slots model class.
+    """
+
+    __tablename__ = 'slots'
+
+    id = db.Column(db.String(38), primary_key=True, default=unique_uid, unique=True, nullable=False)
+    topic = db.Column(db.String(200), nullable=False)
+    subtopic = db.Column(db.String(200), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    start_time = db.Column(db.Time, nullable=False)
+    end_time = db.Column(db.Time, nullable=False)
+    stem = db.Column(db.String(250))
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
+    # Define a foreign key for the student who attends the slot
+    student_id = db.Column(db.String(38), db.ForeignKey('profile.id', ondelete="CASCADE"), nullable=True)
+
+    # Define a foreign key for the volunteer who teaches the slot
+    volunteer_id = db.Column(db.String(38), db.ForeignKey('profile.id', ondelete="CASCADE"), nullable=True)
+    
+    user_id = db.Column(db.String(38), db.ForeignKey('user.id', ondelete="CASCADE"), nullable=False)
+
+    def __repr__(self):
+        return f"Slots(id={self.id}, topic={self.topic}, subtopic={self.subtopic}, date={self.date}, start_time={self.start_time}, end_time={self.end_time}, stem={self.stem})"
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+        
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+        
+    def get_absolute_url(self):
+        return url_for('users.slots', slots_id=self.id)
+    
+    def get_edit_url(self):
+        return url_for('users.edit_slots', slots_id=self.id)
+    
+    def get_delete_url(self):
+        return url_for('users.delete_slots', slots_id=self.id)
+    
+    def get_user(self):
+        return User.query.filter_by(id=self.user_id).first()
+    
+    def get_user_slots(self, user_id):
+        return Slots.query.filter_by(user_id=user_id).all()
+    
+    def get_user_slots_by_username(self, username):
+        user = User.query.filter_by(username=username).first()
+        return Slots.query.filter_by(user_id=user.id).all()
+
