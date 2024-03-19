@@ -173,3 +173,4 @@ class CreateSlotForm(FlaskForm):
     start_time = TimeField('Start Time', validators=[DataRequired()], format='%H:%M')
     end_time = TimeField('End Time', validators=[DataRequired()], format='%H:%M')
     submit = SubmitField('Create Slot')
+    

@@ -34,7 +34,7 @@ from users.utils import (
 
 from flask_mail import Message
 from users.extensions import mail
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 import re
 import mimetypes
 import requests
@@ -300,7 +300,6 @@ def confirm_email(token=None):
 def home():
     return render_template('home.html', profile=profile)
 
-
 @users.route('/profile', methods=['GET', 'POST'], strict_slashes=False)
 @login_required
 def profile():
@@ -308,6 +307,16 @@ def profile():
 
     user = User.query.get_or_404(current_user.id)
     profile = Profile.query.filter_by(user_id=user.id).first_or_404()
+
+    # Fetch the taken teaching slots if the user is a volunteer
+    taken_teaching_slots = []
+    if current_user.role == 'volunteer':
+        taken_teaching_slots = Slots.query.filter_by(volunteer_id=profile.id).all()
+
+    # Fetch the taken attending slots if the user is a student
+    taken_attending_slots = []
+    if current_user.role == 'student':
+        taken_attending_slots = Slots.query.filter_by(student_id=profile.id).all()
 
     if form.validate_on_submit():
         username = form.data.get('username')
@@ -333,7 +342,8 @@ def profile():
 
         return redirect(url_for('users.edit_profile'))
 
-    return render_template('profile.html', form=form, profile=profile)
+    return render_template('profile.html', form=form, profile=profile, taken_teaching_slots=taken_teaching_slots, taken_attending_slots=taken_attending_slots)
+
 
 @users.route('/admin/profile', methods=['GET'])
 @login_required
@@ -796,6 +806,7 @@ def create_slot():
 
         # Retrieve all volunteer users
         volunteers = User.query.filter_by(role='volunteer').all()
+        students = User.query.filter_by(role='student').all()
 
         # Send email notification to each volunteer
         for volunteer in volunteers:
@@ -805,7 +816,15 @@ def create_slot():
             msg.body = f'Hi {volunteer.username},\n\nA new teaching slot has been created.\n\nTopic: {topic}\nSubtopic: {subtopic}\nDate: {date}\nStart Time: {start_time}\nEnd Time: {end_time}'
             mail.send(msg)
 
-        flash('Teaching slot created successfully. Email notifications sent to volunteers.', 'success')
+        # Send email notification to each student
+        for student in students:
+            msg = Message('New Teaching Slot Created',
+                          sender='systemsprogramming95@gmail.com',
+                          recipients=[student.email])
+            msg.body = f'Hi {student.username},\n\nA new teaching slot has been created.\n\nTopic: {topic}\nSubtopic: {subtopic}\nDate: {date}\nStart Time: {start_time}\nEnd Time: {end_time}'
+            mail.send(msg)
+
+        flash('Teaching slot created successfully. Email notifications sent to volunteers and students.', 'success')
         return redirect(url_for('users.dashboard'))
 
     return render_template('create_slot.html', form=form, maths_catalogue=maths_catalogue, physical_science_catalogue=physical_science_catalogue)
@@ -838,18 +857,22 @@ def update_slot():
     slot = Slots.query.get_or_404(slot_id)
 
     # Update the slot data
-    slot.topic = request.form.get('topic')
-    slot.subtopic = request.form.get('subtopic')
-    slot.stem = request.form.get('stem')
-    slot.date = request.form.get('date')
-    slot.start_time = request.form.get('start_time')
-    slot.end_time = request.form.get('end_time')
+    if request.method == 'POST':
+        slot.topic = request.form.get('topic')
+        slot.subtopic = request.form.get('subtopic')
+        slot.stem = request.form.get('stem')
+
+        # Extract time component from datetime strings and convert to time objects
+        slot.date = datetime.strptime(request.form.get('date'), '%Y-%m-%d').date()
+        slot.start_time = datetime.strptime(request.form.get('start_time'), '%H:%M:%S').time()
+        slot.end_time = datetime.strptime(request.form.get('end_time'), '%H:%M:%S').time()
 
     # Save the updated slot
     db.session.commit()
 
     flash('Teaching slot updated successfully.', 'success')
     return redirect(url_for('users.dashboard'))
+
 
 @users.route('/live_classes', methods=['GET'], strict_slashes=False)
 @login_required
@@ -861,14 +884,15 @@ def live_classes():
 @users.route('/attend_event/<slot_id>', methods=['GET'], strict_slashes=False)
 @login_required
 def attend_event(slot_id):
+    
     slot = Slots.query.get(slot_id)
     if not slot:
-        flash('Teaching slot not found.', 'error')
+        flash('Attending slot not found.', 'error')
         return redirect(url_for('users.dashboard'))
 
-    # Check if the current user is a student
+    # Check if the current user is a volunteer
     if current_user.role != 'student':
-        flash('You are not authorized to attend teaching slots.', 'error')
+        flash('You are not authorized to take attending slots.', 'error')
         return redirect(url_for('users.live_classes'))
 
     # Get the profile of the current user
@@ -876,16 +900,22 @@ def attend_event(slot_id):
     if not profile:
         flash('Profile not found.', 'error')
         return redirect(url_for('users.live_classes'))
+    
+    # Check if the slot is already taken by the user
+    if slot.student_id == profile.id:
+        flash('You have already taken this attending slot.', 'warning')
+        return redirect(url_for('users.profile'))
 
-    # Assign the slot to the current student profile
-    profile.attending_slots.append(slot)
-    profile.save()
+    # Assign the slot to the current volunteer profile
+    slot.student_id = profile.id
+    db.session.commit()
 
-    flash('Teaching slot added successfully to your profile.', 'success')
+    flash('Attending slot taken successfully.', 'success')
     return redirect(url_for('users.profile'))
-    
-    
+
+
 @users.route('/take_slot/<slot_id>', methods=['GET'], strict_slashes=False)
+@login_required
 def take_slot(slot_id):
     slot = Slots.query.get(slot_id)
     if not slot:
@@ -902,10 +932,15 @@ def take_slot(slot_id):
     if not profile:
         flash('Profile not found.', 'error')
         return redirect(url_for('users.live_classes'))
+    
+    # Check if the slot is already taken by the user
+    if slot.volunteer_id == profile.id:
+        flash('You have already taken this teaching slot.', 'warning')
+        return redirect(url_for('users.profile'))
 
     # Assign the slot to the current volunteer profile
-    profile.teaching_slots.append(slot)
-    profile.save()
+    slot.volunteer_id = profile.id
+    db.session.commit()
 
     flash('Teaching slot taken successfully.', 'success')
     return redirect(url_for('users.profile'))

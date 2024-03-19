@@ -21,9 +21,9 @@
                 {% for student in students %}
                 <tr>
                 <td style="display: flex; justify-content: center; align-items: center;">
-                    {% if student_profiles[student] and student_profiles[student].avator %}
+                    {% if student_profiles[student] and student_profiles[student].avatar %}
                     <img class="rounded-circle" style="width: 40px;height: 40px;"
-                        src="{{ url_for('static', filename='assets/profile/' + student_profiles[student].avator) }}"
+                        src="{{ url_for('static', filename='assets/profile/' + student_profiles[student].avatar) }}"
                         alt="Avatar">
                     {% else %}
                     <img class="rounded-circle" style="width: 40px;height: 40px;"
@@ -51,9 +51,9 @@
                 {% for volunteer in volunteers %}
                 <tr>
                     <td style="display: flex; justify-content: center; align-items: center;">
-                        {% if volunteer_profiles[volunteer] and volunteer_profiles[volunteer].avator %}
+                        {% if volunteer_profiles[volunteer] and volunteer_profiles[volunteer].avatar %}
                         <img class="rounded-circle" style="width: 40px;height: 40px;"
-                            src="{{ url_for('static', filename='assets/profile/'+ volunteer_profiles[volunteer].avator) }}" alt="Avatar">
+                            src="{{ url_for('static', filename='assets/profile/'+ volunteer_profiles[volunteer].avatar) }}" alt="Avatar">
                         {% else %}
                         <img class="rounded-circle" style="width: 40px;height: 40px;"
                             src="{{ url_for('static', filename='assets/images/default_avator.jpg') }}" , alt="Avatar">

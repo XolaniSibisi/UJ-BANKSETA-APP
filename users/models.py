@@ -137,15 +137,15 @@ class Profile(db.Model):
         return '<Profile> {}'.format(self.user.username)
 
     def set_avator(self, profile_image):
-        if self.avator:
-            path = os.path.join(UPLOAD_FOLDER, self.avator)
+        if self.avatar:
+            path = os.path.join(UPLOAD_FOLDER, self.avatar)
             remove_existing_file(path=path)
             
         if not os.path.exists(UPLOAD_FOLDER):
             os.makedirs(os.path.join(UPLOAD_FOLDER), exist_ok=True)
             
-        self.avator = get_unique_filename(profile_image.filename)
-        profile_image.save(os.path.join(UPLOAD_FOLDER, self.avator))
+        self.avatar = get_unique_filename(profile_image.filename)
+        profile_image.save(os.path.join(UPLOAD_FOLDER, self.avatar))
 
     def save(self):
         db.session.add(self)
@@ -335,9 +335,10 @@ class Slots(db.Model):
         return User.query.filter_by(id=self.user_id).first()
     
     def get_user_slots(self, user_id):
-        return Slots.query.filter_by(user_id=user_id).all()
-    
+        return Slots.query.filter((Slots.student_id == user_id) | (Slots.volunteer_id == user_id)).all()
+
     def get_user_slots_by_username(self, username):
         user = User.query.filter_by(username=username).first()
-        return Slots.query.filter_by(user_id=user.id).all()
-
+        if user:
+            return self.get_user_slots(user.id)
+        return []

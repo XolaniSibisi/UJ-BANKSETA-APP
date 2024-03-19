@@ -16,9 +16,9 @@
             <div class="row">
                 <div class="col-md-4 mt-5">
                     <div class="d-flex justify-content-center">
-                        {% if profile and profile.avator %}
+                        {% if profile and profile.avatar %}
                         <img class="rounded-circle mt-5 mb-3" style="object-fit: cover;width: 180px;height: 180px;"
-                            src="{{ url_for('static', filename='assets/profile/'+profile.avator) }}">
+                            src="{{ url_for('static', filename='assets/profile/'+profile.avatar) }}">
                         {% else %}
                         <img src="{{ url_for('static', filename='assets/images/default_avator.jpg') }}"
                             alt="profile image" class="rounded-circle mt-5 mb-3"
@@ -50,6 +50,44 @@
                 </div>
             </div>
         </div>
+        <!-- Display taken teaching slots for volunteer users -->
+{% if current_user.role == 'volunteer' %}
+<h1 class="mt-5 mb-4 text-center">Taken Teaching Slots</h1>
+<div class="row">
+    {% for slot in taken_teaching_slots %}
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3 text-center">{{ slot.topic }}</h5>
+                <h6 class="card-subtitle mb-3">Subtopic: {{ slot.subtopic }}</h6>
+                <p class="card-text">Date: {{ slot.date }}</p>
+                <p class="card-text">Time: {{ slot.start_time }} - {{slot.end_time}}</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Display taken attending slots for student users -->
+{% if current_user.role == 'student' %}
+<h1 class="mt-5 mb-4 text-center">Taken Attending Slots</h1>
+<div class="row">
+    {% for slot in taken_attending_slots %}
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3 text-center">{{ slot.topic }}</h5>
+                <h6 class="card-subtitle mb-3">Subtopic: {{ slot.subtopic }}</h6>
+                <p class="card-text">Date: {{ slot.date }}</p>
+                <p class="card-text">Time: {{ slot.start_time }} - {{slot.end_time}}</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
     </div>
 </div>
 

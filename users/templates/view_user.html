@@ -1,64 +1,115 @@
 {% extends "base.html" %}
 {% from 'bootstrap5/form.html' import render_field %}
 {% from 'bootstrap5/utils.html' import render_messages %}
-{% block title %}My Profile{% endblock %}
+{% block title %}View User{% endblock %}
 
 {% block body %}
 
 <div class="my-5">
     <div class="container">
-        {{ render_messages(dismissible=True, dismiss_animate=True) }}
-        <div class="container">
-            <div class="col-md-4 mt-5">
-                <div class="d-flex justify-content-center">
-                    {% if profile and profile.avator %}
-                    <img class="rounded-circle mt-5 mb-3" style="object-fit: cover;width: 180px;height: 180px;"
-                        src="{{ url_for('static', filename='assets/profile/'+profile.avator) }}">
-                    {% else %}
-                    <img src="{{ url_for('static', filename='assets/images/default_avator.jpg') }}" alt="profile image"
-                        class="rounded-circle mt-5 mb-3" style="object-fit: cover;width: 200px;height: 200px;" />
-                    {% endif %}
+        <div class="mt-4">
+            <div class="row">
+                <div class="col-md-12">
+                    {{ render_messages(dismissible=True, dismiss_animate=True) }}
                 </div>
             </div>
-            <div class="col-md-6 m-5">
-                <div class="row my-3 mt-5">
-                    <div class="mb-3">
-                        <h2 class="mb-1">{{ user.first_name }} {{ user.last_name }}</h2>
-                        <p>@{{ user.username }}</p>
+            <div class="row">
+                <div class="col-md-4 mt-5">
+                    <div class="d-flex justify-content-center">
+                        {% if profile and profile.avatar %}
+                        <img class="rounded-circle mt-5 mb-3" style="object-fit: cover;width: 180px;height: 180px;"
+                            src="{{ url_for('static', filename='assets/profile/'+profile.avatar) }}">
+                        {% else %}
+                        <img src="{{ url_for('static', filename='assets/images/default_avator.jpg') }}"
+                            alt="profile image" class="rounded-circle mt-5 mb-3"
+                            style="object-fit: cover;width: 200px;height: 200px;" />
+                        {% endif %}
                     </div>
-                    <h6 class="text-muted mb-4">{{ profile.bio }}</h6>
-                    <div class="row">
-                        <label class="fw-bold">First Name</label>
-                        <p>{{ user.first_name }}</p>
+                </div>
+                <div class="col-md-6 mt-5">
+                    <div class="my-3">
+                        <h2 class="mb-1">{{ current_user.first_name }} {{ current_user.last_name }}</h2>
+                        <p>@{{ current_user.username }}</p>
+                        <h6 class="text-muted mb-4">{{ profile.bio }}</h6>
+                        <div class="row">
+                            <label class="fw-bold">First Name</label>
+                            <p>{{ current_user.first_name }}</p>
+                        </div>
+                        <div class="row">
+                            <label class="fw-bold">Last Name</label>
+                            <p>{{ current_user.last_name }}</p>
+                        </div>
+                        <div class="row">
+                            <label class="fw-bold">Email Address</label>
+                            <p>{{ current_user.email }}</p>
+                        </div>
                     </div>
-                    <div class="row">
-                        <label class="fw-bold">Last Name</label>
-                        <p>{{ user.last_name }}</p>
-                    </div>
-                    <div class="row">
-                        <label class="fw-bold">Email Address</label>
-                        <p>{{ user.email }}</p>
+                    <div>
+                        <button class="btn btn-dark" onclick="history.back()">Back</button>
                     </div>
                 </div>
             </div>
-            <button class="btn btn-dark" onclick="window.history.back()">Back</button>
         </div>
+
+        <!-- Display teaching slots cards for volunteer users -->
+        {% if current_user.role == 'volunteer' %}
+        <div class="row mt-5">
+            <div class="col-md-12">
+                <h3>Teaching Slots</h3>
+                <div class="card-deck">
+                    {% for slot in current_user.profile.teaching_slots %}
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3 text-center">{{ slot.topic }}</h5>
+                            <h6 class="card-subtitle mb-3">Subtopic: {{ slot.subtopic }}</h6>
+                            <p class="card-text">Date: {{ slot.date }}</p>
+                            <p class="card-text">Time: {{ slot.start_time }} - {{slot.end_time}}</p> 
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Display attending slots cards for student users -->
+        {% if current_user.role == 'student' %}
+        <div class="row mt-5">
+            <div class="col-md-12">
+                <h3>Attending Slots</h3>
+                <div class="card-deck">
+                    {% for slot in current_user.profile.attending_slots %}
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3 text-center">{{ slot.topic }}</h5>
+                            <h6 class="card-subtitle mb-3">Subtopic: {{ slot.subtopic }}</h6>
+                            <p class="card-text">Date: {{ slot.date }}</p>
+                            <p class="card-text">Time: {{ slot.start_time }} - {{slot.end_time}}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
+</div>
 
-    <script>
-        // Function to hide messages after a delay
-        function hideMessages() {
-            var messagesElements = document.querySelectorAll('.alert');
-            if (messagesElements) {
-                setTimeout(function () {
-                    messagesElements.forEach(function (element) {
-                        element.style.display = 'none';
-                    });
-                }, 3000);  // 5000 milliseconds (5 seconds)
-            }
+<script>
+    // Function to hide messages after a delay
+    function hideMessages() {
+        var messagesElements = document.querySelectorAll('.alert');
+        if (messagesElements) {
+            setTimeout(function() {
+                messagesElements.forEach(function(element) {
+                    element.style.display = 'none';
+                });
+            }, 3000);  // 5000 milliseconds (5 seconds)
         }
+    }
 
-        // Call the function when the page loads
-        window.onload = hideMessages;
-    </script>
-    {% endblock %}
+    // Call the function when the page loads
+    window.onload = hideMessages;
+</script>
+
+{% endblock %}
