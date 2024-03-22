@@ -17,9 +17,6 @@ with app.app_context():
 
 with app.app_context():
     try:
-        db.session.query(Content).delete()
-        db.session.query(Contact).delete()
-        db.session.query(User).delete()
         db.session.query(Slots).delete()
         db.session.commit()
         print("All content deleted successfully.")

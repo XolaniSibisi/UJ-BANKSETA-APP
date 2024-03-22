@@ -2,6 +2,9 @@ from flask import abort, render_template, request, redirect, url_for, flash, jso
 from flask_wtf.csrf import generate_csrf
 from flask import Blueprint, send_file
 from sqlalchemy.orm import joinedload
+from werkzeug.utils import secure_filename
+from flask import send_from_directory
+from flask import current_app
 import logging
 from flask_login import (
     current_user,
@@ -11,7 +14,7 @@ from flask_login import (
 )
 
 from users.extensions import database as db, csrf
-from users.models import User, Profile, Content, Contact, Counter, Slots
+from users.models import User, Profile, Content, Contact, Slots
 from users.catalogues import maths_catalogue, physical_science_catalogue
 from users.forms import (
     RegisterForm,
@@ -29,7 +32,8 @@ from users.utils import (
     unique_security_token,
     get_unique_filename,
     send_reset_password,
-    send_reset_email
+    send_reset_email,
+    send_notification_email
 )
 
 from flask_mail import Message
@@ -67,6 +71,16 @@ def register():
         email = form.data.get('email')
         role = form.data.get('role')
         password = form.data.get('password')
+        
+        # Save uploaded files
+        id_copy_filename = None
+        certificates_filename = None
+        if form.id_copy.data:
+            id_copy_filename = secure_filename(form.id_copy.data.filename)
+            form.id_copy.data.save(os.path.join(current_app.config['UPLOAD_FOLDER'], id_copy_filename))
+        if form.certificates.data:
+            certificates_filename = secure_filename(form.certificates.data.filename)
+            form.certificates.data.save(os.path.join(current_app.config['UPLOAD_FOLDER'], certificates_filename))
 
         try:
             user = User(
@@ -80,6 +94,11 @@ def register():
             user.set_password(password)
             user.save()
             user.send_confirmation()
+            
+            # Send documents via email
+            if role == 'volunteer':
+                send_documents_email(user.id, id_copy_filename, certificates_filename)
+                
             flash("A confirmation link sent to your email. Please verify your account.", 'info')
             return redirect(url_for('users.login'))
             
@@ -88,6 +107,32 @@ def register():
             return redirect(url_for('users.register'))
 
     return render_template('register.html', form=form)
+
+def send_documents_email(user_id, id_copy_filename, certificates_filename):
+    try:
+        # Get the user information
+        user = User.query.get(user_id)
+        if user:
+            # Create the email message
+            msg = Message('Documents Attached', sender=user.email, recipients=[os.environ.get('MAIL_USERNAME', None)])
+            msg.body = f'User {user.username} has registered as a volunteer.'
+            
+            # Attach the documents
+            if id_copy_filename:
+                with current_app.open_resource(os.path.join(current_app.config['UPLOAD_FOLDER'], id_copy_filename)) as id_copy_file:
+                    msg.attach(id_copy_filename, 'application/pdf', id_copy_file.read())
+            if certificates_filename:
+                with current_app.open_resource(os.path.join(current_app.config['UPLOAD_FOLDER'], certificates_filename)) as certificates_file:
+                    msg.attach(certificates_filename, 'application/pdf', certificates_file.read())
+            
+            # Send the email
+            mail.send(msg)
+            print('Documents email sent successfully.')  # Debugging statement
+        else:
+            print('User not found.')  # Debugging statement
+    except Exception as e:
+        print(f'Error sending documents email: {str(e)}')  # Debugging statement
+
 
 @users.route('/login', methods=['GET', 'POST'], strict_slashes=False)
 def login():
@@ -375,20 +420,22 @@ def admin_profile():
 
 @users.route('/view_user/<user_id>', methods=['GET'])
 def view_user(user_id):
-    user = User.query.get(user_id)
-    if not user:
-        flash("User not found.", 'error')
-        return redirect(url_for('users.admin_profile'))
+    user = User.query.get_or_404(user_id)
+    profile = Profile.query.filter_by(user_id=user_id).first_or_404()
 
-    # Retrieve the profile based on the user type
-    if user.role == 'student':
-        profile = Profile.query.filter_by(user_id=user_id).first()
-    elif user.role == 'volunteer':
-        profile = Profile.query.filter_by(user_id=user_id).first()
-    else:
-        profile = None  # Handle other roles or scenarios if needed
+    # Fetch the slots associated with the user's profile
+    taken_teaching_slots = []
+    taken_attending_slots = []
 
-    return render_template('view_user.html', user=user, profile=profile)
+    if user.role == 'volunteer':
+        taken_teaching_slots = profile.teaching_slots
+    elif user.role == 'student':
+        taken_attending_slots = profile.attending_slots
+
+    return render_template('view_user.html', user=user, profile=profile,
+                           taken_teaching_slots=taken_teaching_slots,
+                           taken_attending_slots=taken_attending_slots)
+
 
 
 @users.route('/delete_user/<user_id>', methods=['POST'], strict_slashes=False)
@@ -497,6 +544,17 @@ def related_links():
 def search():
     return render_template('search.html')
 
+def preprocess_content_data(content_list):
+    content_data = {}
+    for content in content_list:
+        topic = content.topic
+        subtopic = content.subtopic
+        if topic not in content_data:
+            content_data[topic] = {}
+        if subtopic not in content_data[topic]:
+            content_data[topic][subtopic] = []
+        content_data[topic][subtopic].append(content)
+    return content_data
 
 @users.route('/maths_content', methods=['GET'])
 @login_required
@@ -504,10 +562,14 @@ def maths_content():
     # Fetch maths content from the database
     maths_content = Content.query.filter_by(stem='maths').all()
 
-    # Organize the content into a dictionary structure based on content_type
+    # Organize the content into a dictionary structure based on content_type and topic
     content_data = {}
     for content in maths_content:
-        content_data.setdefault(content.content_type, []).append(content)
+        if content.content_type not in content_data:
+            content_data[content.content_type] = {}
+        if content.topic not in content_data[content.content_type]:
+            content_data[content.content_type][content.topic] = []
+        content_data[content.content_type][content.topic].append(content)
 
     if not content_data:  # If content_data is empty or None
         return render_template('no_content.html')
@@ -521,16 +583,36 @@ def science_content():
     # Fetch science content from the database
     science_content = Content.query.filter_by(stem='science').all()
 
-    # Organize the content into a dictionary structure based on content_type
+    # Organize the content into a dictionary structure based on content_type and topic
     content_data = {}
     for content in science_content:
-        content_data.setdefault(content.content_type, []).append(content)
+        if content.content_type not in content_data:
+            content_data[content.content_type] = {}
+        if content.topic not in content_data[content.content_type]:
+            content_data[content.content_type][content.topic] = []
+        content_data[content.content_type][content.topic].append(content)
 
     if not content_data:  # If content_data is empty or None
         return render_template('no_content.html')
 
     return render_template('science_content.html', content_data=content_data)
 
+def save_file_to_server(file):
+    """
+    Save the uploaded file to the server.
+    """
+    # Check if the file is provided
+    if file:
+        # Get the uploads folder path
+        uploads_folder = current_app.config['UPLOAD_FOLDER']
+        # Ensure the uploads folder exists
+        os.makedirs(uploads_folder, exist_ok=True)
+        # Save the file to the uploads folder
+        file_path = os.path.join(uploads_folder, file.filename)
+        file.save(file_path)
+        return file_path
+    else:
+        return None
 
 # Define a route to handle the upload_content.html template
 @users.route('/upload_content', methods=['GET', 'POST'])
@@ -554,31 +636,45 @@ def upload_content():
     if form.validate_on_submit():
         content_type = form.content_type.data
         link = form.link.data
+        file = form.file.data
         stem = form.stem.data
         topic = form.topic.data
         subtopic = form.subtopic.data
 
-        # Get the current user's ID
-        user_id = current_user.id
+        if file:
+            # Save file to the server and get the file path
+            file_path = save_file_to_server(file)
+            # Create Content instance with file path
+            new_content = Content(
+                content_type=content_type,
+                link=file_path,  # Store the file path in the 'link' field
+                stem=stem,
+                topic=topic,
+                subtopic=subtopic,
+                user_id=current_user.id
+            )
+        elif link:
+            # Create Content instance with link
+            new_content = Content(
+                content_type=content_type,
+                link=link,
+                stem=stem,
+                topic=topic,
+                subtopic=subtopic,
+                user_id=current_user.id
+            )
+        else:
+            flash('Please upload a file or provide a link.', 'error')
+            return redirect(url_for('users.upload_content'))
 
-        # Create a new Content object
-        new_content = Content(
-            content_type=content_type,
-            link=link,
-            stem=stem,
-            topic=topic,
-            subtopic=subtopic,
-            user_id=user_id
-        )
-
+        # Save the content to the database
         db.session.add(new_content)
         db.session.commit()
 
-        flash('Content uploaded successfully', 'success')
+        flash('Content uploaded successfully.', 'success')
         return redirect(url_for('users.dashboard'))
 
     return render_template('upload_content.html', form=form, maths_catalogue=maths_catalogue, physical_science_catalogue=physical_science_catalogue)
-
 
 # Define a route to handle the no_content.html template
 @users.route('/no_content', methods=['GET'])
@@ -599,6 +695,19 @@ def convert_to_embed_link(link):
         return f"https://www.youtube.com/embed/{video_id[0]}"
     return None
 
+@users.route('/content_files/<file_name>', methods=['GET'])
+def serve_content_file(file_name):
+    # Construct the absolute path to the content file
+    file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], file_name)
+
+    # Check if the file exists
+    if os.path.exists(file_path):
+        # Serve the file using Flask's send_file function
+        return send_file(file_path)
+    else:
+        # If the file does not exist, return a 404 error
+        abort(404)
+
 # Define the view_content endpoint
 @users.route('/view_content/<content_id>')
 @login_required
@@ -606,33 +715,27 @@ def view_content(content_id):
     # Fetch the content data from the database based on the content_id
     content = Content.query.get(content_id)
     if content:
-        # Convert YouTube link to embed link
-        content.embed_link = convert_to_embed_link(content.link)
-        # Render the view_content.html template and pass the content data
-        return render_template('view_content.html', content=content)
+        if content.link.startswith('C:\\'):
+            # Extract the file name from the path
+            file_name = os.path.basename(content.link)
+            # Construct the URL for serving the uploaded file
+            file_url = url_for('users.serve_uploaded_file', filename=file_name)
+            return render_template('view_content.html', content=content, file_url=file_url)
+        else:
+            # Convert YouTube link to embed link
+            content.embed_link = convert_to_embed_link(content.link)
+            # Render the view_content.html template and pass the content data
+            return render_template('view_content.html', content=content)
     else:
         # If content is not found, redirect to a home page
         flash('Content not found', 'error')
         return redirect(url_for('users.home'))
-    
-@users.route('/increment_view/<content_id>')
+
+@users.route('/uploads/<path:filename>', methods=['GET'])
 @login_required
-def increment_view(content_id):
-    # Fetch the content data from the database based on the content_id
-    content = Content.query.get(content_id)
-    if content:
-        # Increment the total_views counter
-        total_views_counter = Counter.query.filter_by(name='total_views').first()
-        if total_views_counter:
-            total_views_counter.count += 1
-            db.session.commit()
-        
-        # Redirect back to the view_content page
-        return redirect(url_for('users.view_content', content_id=content_id))
-    else:
-        # If content is not found, redirect to a home page
-        flash('Content not found', 'error')
-        return redirect(url_for('users.home'))
+def serve_uploaded_file(filename):
+    uploads = current_app.config['UPLOAD_FOLDER']
+    return send_from_directory(uploads, filename)   
 
 # Define the download_content endpoint
 @users.route('/download_content/<content_id>', methods=['GET'])
@@ -640,14 +743,17 @@ def increment_view(content_id):
 def download_content(content_id):
     # Retrieve the Content object based on the content_id
     content = Content.query.get_or_404(content_id)
-
-    # If the content type is a video (e.g., YouTube link)
+    
     if content.content_type == 'video':
-        # Redirect users to the YouTube video page
         return redirect(content.link)
+
+    # If the content is uploaded from the local drive, construct the file URL
+    if content.link.startswith('C:\\'):
+        file_url = url_for('users.serve_uploaded_file', filename=os.path.basename(content.link))
+        # Redirect users to the file URL for download
+        return redirect(file_url)
     else:
-        # For other types of content, download the file
-        # Retrieve the file from the URL
+        # For other types of content, download the file from the URL
         response = requests.get(content.link)
 
         # Check if the request was successful
@@ -655,44 +761,28 @@ def download_content(content_id):
             # Get the content type from the database
             content_type = content.content_type
 
+            # Guess the file extension based on the content type
             file_extension = mimetypes.guess_extension(content_type)
 
+            # If the file extension is not found, use '.pdf' as the default
             if not file_extension:
                 file_extension = ".pdf"
 
-            temp_file = tempfile.NamedTemporaryFile(
-                suffix=file_extension, delete=False)
+            # Generate a temporary file with the appropriate extension
+            temp_file = tempfile.NamedTemporaryFile(suffix=file_extension, delete=False)
+
+            # Write the content of the response to the temporary file
             temp_file.write(response.content)
             temp_file.close()
 
-            title = content.title if content.title else "Untitled"
-            filename = title + file_extension
+            # Set the filename for download
+            filename = f'{content.topic}{file_extension}' if content.topic else f'Untitled{file_extension}'
 
+            # Send the temporary file as an attachment for download
             return send_file(temp_file.name, as_attachment=True, download_name=filename)
-        
         else:
-            
             flash('Failed to download content.', 'error')
             return redirect(url_for('users.home'))
-
-@users.route('/increment_download/<content_id>')
-@login_required
-def increment_download(content_id):
-    # Fetch the content data from the database based on the content_id
-    content = Content.query.get(content_id)
-    if content:
-        # Increment the total_downloads counter
-        total_downloads_counter = Counter.query.filter_by(name='total_downloads').first()
-        if total_downloads_counter:
-            total_downloads_counter.count += 1
-            db.session.commit()
-        
-        # Redirect back to the view_content page
-        return redirect(url_for('users.download_content', content_id=content_id))
-    else:
-        # If content is not found, redirect to a home page
-        flash('Content not found', 'error')
-        return redirect(url_for('users.home'))
 
 
 # Admin dashboard route
@@ -702,19 +792,35 @@ def dashboard():
     # Fetch all content from the database
     all_content = Content.query.all()
     
-    # Fetch counter values from the database
-    num_students_counter = Counter.query.filter_by(name='num_students').first()
-    num_students = num_students_counter.count if num_students_counter else 0
+    # Get the count of students
+    num_students = User.query.filter_by(role='student').count()
 
-    num_volunteers_counter = Counter.query.filter_by(name='num_volunteers').first()
-    num_volunteers = num_volunteers_counter.count if num_volunteers_counter else 0
+    # Get the count of volunteers
+    num_volunteers = User.query.filter_by(role='volunteer').count()
+    
+    # Get count for taken slots
+    num_slots_taken = Slots.query.filter_by(status='taken').count()
 
-    total_downloads_counter = Counter.query.filter_by(name='total_downloads').first()
-    total_downloads = total_downloads_counter.count if total_downloads_counter else 0
+    # Calculate slot attendance percentage
+    num_slots_attendance = Slots.query.filter(Slots.student_id.isnot(None)).count()/Slots.query.count()*100 if Slots.query.count() > 0 else 0
 
-    total_views_counter = Counter.query.filter_by(name='total_views').first()
-    total_views = total_views_counter.count if total_views_counter else 0
-    return render_template('dashboard.html', all_content=all_content, num_students=num_students, num_volunteers=num_volunteers, total_downloads=total_downloads, total_views=total_views)
+    # Get the latest registration date for students
+    latest_student_registration = User.query.filter_by(role='student').order_by(User.created_at.desc()).first()
+    if latest_student_registration:
+        last_student_registration_date = latest_student_registration.created_at
+    else:
+        last_student_registration_date = None
+
+    # Get the latest registration date for volunteers
+    latest_volunteer_registration = User.query.filter_by(role='volunteer').order_by(User.created_at.desc()).first()
+    if latest_volunteer_registration:
+        last_volunteer_registration_date = latest_volunteer_registration.created_at
+    else:
+        last_volunteer_registration_date = None
+
+    return render_template('dashboard.html', num_students=num_students, num_volunteers=num_volunteers,
+                           last_student_registration_date=last_student_registration_date,
+                           last_volunteer_registration_date=last_volunteer_registration_date, num_slots_taken=num_slots_taken, num_slots_attendance=num_slots_attendance, all_content=all_content)
 
 # Route to edit content
 @users.route('/edit_content/<content_id>', methods=['GET'])
@@ -786,6 +892,7 @@ def create_slot():
         date = form.date.data
         start_time = form.start_time.data
         end_time = form.end_time.data
+        teams_link = form.teams_link.data
 
         # Get the current user's ID
         user_id = current_user.id
@@ -797,6 +904,7 @@ def create_slot():
             date=date,
             start_time=start_time,
             end_time=end_time,
+            teams_link=teams_link,
             stem=stem,
             user_id=user_id
         )
@@ -804,30 +912,24 @@ def create_slot():
         db.session.add(new_slot)
         db.session.commit()
 
-        # Retrieve all volunteer users
+       # Retrieve all volunteer users
         volunteers = User.query.filter_by(role='volunteer').all()
-        students = User.query.filter_by(role='student').all()
-
-        # Send email notification to each volunteer
+        # Send email notification to volunteers
         for volunteer in volunteers:
-            msg = Message('New Teaching Slot Created',
-                          sender='systemsprogramming95@gmail.com',
-                          recipients=[volunteer.email])
-            msg.body = f'Hi {volunteer.username},\n\nA new teaching slot has been created.\n\nTopic: {topic}\nSubtopic: {subtopic}\nDate: {date}\nStart Time: {start_time}\nEnd Time: {end_time}'
-            mail.send(msg)
-
-        # Send email notification to each student
+            send_notification_email([volunteer], 'New Teaching Slot Created', 
+                         f'Hi {volunteer.username},\n\nA new teaching slot has been created.\n\nTopic: {topic}\nSubtopic: {subtopic}\nDate: {date}\nStart Time: {start_time}\nEnd Time: {end_time}\nTeams Link: {teams_link}')
+        
+        # Retrieve all student users
+        students = User.query.filter_by(role='student').all()
+        # Send email notification to students
         for student in students:
-            msg = Message('New Teaching Slot Created',
-                          sender='systemsprogramming95@gmail.com',
-                          recipients=[student.email])
-            msg.body = f'Hi {student.username},\n\nA new teaching slot has been created.\n\nTopic: {topic}\nSubtopic: {subtopic}\nDate: {date}\nStart Time: {start_time}\nEnd Time: {end_time}'
-            mail.send(msg)
+            send_notification_email([student], 'New Teaching Slot Created',
+                         f'Hi {student.username},\n\nA new teaching slot has been created.\n\nTopic: {topic}\nSubtopic: {subtopic}\nDate: {date}\nStart Time: {start_time}\nEnd Time: {end_time}\nTeams Link: {teams_link}')
 
         flash('Teaching slot created successfully. Email notifications sent to volunteers and students.', 'success')
         return redirect(url_for('users.dashboard'))
 
-    return render_template('create_slot.html', form=form, maths_catalogue=maths_catalogue, physical_science_catalogue=physical_science_catalogue)
+    return render_template('create_slot.html', form=form, maths_catalogue=maths_catalogue, physical_science_catalogue=physical_science_catalogue, )
 
 @users.route('/delete_slot/<slot_id>', methods=['POST'], strict_slashes=False)
 @login_required
@@ -861,6 +963,7 @@ def update_slot():
         slot.topic = request.form.get('topic')
         slot.subtopic = request.form.get('subtopic')
         slot.stem = request.form.get('stem')
+        teams_link = request.form.get('teams_link')
 
         # Extract time component from datetime strings and convert to time objects
         slot.date = datetime.strptime(request.form.get('date'), '%Y-%m-%d').date()
@@ -933,14 +1036,16 @@ def take_slot(slot_id):
         flash('Profile not found.', 'error')
         return redirect(url_for('users.live_classes'))
     
-    # Check if the slot is already taken by the user
-    if slot.volunteer_id == profile.id:
-        flash('You have already taken this teaching slot.', 'warning')
+    # Check if the slot is already taken
+    if slot.status == 'taken':
+        flash('This teaching slot has already been taken.', 'warning')
         return redirect(url_for('users.profile'))
 
     # Assign the slot to the current volunteer profile
     slot.volunteer_id = profile.id
+    slot.status = 'taken'
     db.session.commit()
 
     flash('Teaching slot taken successfully.', 'success')
     return redirect(url_for('users.profile'))
+

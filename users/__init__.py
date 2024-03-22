@@ -55,6 +55,9 @@ def config_application(app):
     app.config["MAIL_USE_TLS"] = True
     app.config["MAIL_USERNAME"] = os.getenv('MAIL_USERNAME', None)
     app.config["MAIL_PASSWORD"] = os.getenv('MAIL_PASSWORD', None)
+    
+    # Set the UPLOAD_FOLDER configuration
+    app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 
 def config_blueprint(app):

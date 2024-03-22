@@ -17,7 +17,7 @@
                 <div class="col-md-4 mt-5">
                     <div class="d-flex justify-content-center">
                         {% if profile and profile.avatar %}
-                        <img class="rounded-circle mt-5 mb-3" style="object-fit: cover;width: 180px;height: 180px;"
+                        <img class="rounded-circle mt-5 mb-3" style="object-fit: cover;width: 200px;height: 200px;"
                             src="{{ url_for('static', filename='assets/profile/'+profile.avatar) }}">
                         {% else %}
                         <img src="{{ url_for('static', filename='assets/images/default_avator.jpg') }}"
@@ -28,20 +28,20 @@
                 </div>
                 <div class="col-md-6 mt-5">
                     <div class="my-3">
-                        <h2 class="mb-1">{{ current_user.first_name }} {{ current_user.last_name }}</h2>
-                        <p>@{{ current_user.username }}</p>
+                        <h2 class="mb-1">{{ user.first_name }} {{ user.last_name }}</h2>
+                        <p>@{{ user.username }}</p>
                         <h6 class="text-muted mb-4">{{ profile.bio }}</h6>
                         <div class="row">
                             <label class="fw-bold">First Name</label>
-                            <p>{{ current_user.first_name }}</p>
+                            <p>{{ user.first_name }}</p>
                         </div>
                         <div class="row">
                             <label class="fw-bold">Last Name</label>
-                            <p>{{ current_user.last_name }}</p>
+                            <p>{{ user.last_name }}</p>
                         </div>
                         <div class="row">
                             <label class="fw-bold">Email Address</label>
-                            <p>{{ current_user.email }}</p>
+                            <p>{{ user.email }}</p>
                         </div>
                     </div>
                     <div>
@@ -51,47 +51,48 @@
             </div>
         </div>
 
-        <!-- Display teaching slots cards for volunteer users -->
-        {% if current_user.role == 'volunteer' %}
-        <div class="row mt-5">
-            <div class="col-md-12">
-                <h3>Teaching Slots</h3>
-                <div class="card-deck">
-                    {% for slot in current_user.profile.teaching_slots %}
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title mb-3 text-center">{{ slot.topic }}</h5>
-                            <h6 class="card-subtitle mb-3">Subtopic: {{ slot.subtopic }}</h6>
-                            <p class="card-text">Date: {{ slot.date }}</p>
-                            <p class="card-text">Time: {{ slot.start_time }} - {{slot.end_time}}</p> 
-                        </div>
+        <!-- Display Teaching Slots for Volunteer -->
+        {% if taken_teaching_slots %}
+        <h1 class="mt-5 mb-4 text-center">Taken Teaching Slots</h1>
+        <div class="row">
+            {% for slot in taken_teaching_slots %}
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3 text-center">{{ slot.topic }}</h5>
+                        <h6 class="card-subtitle mb-3">Subtopic: {{ slot.subtopic }}</h6>
+                        <p class="card-text">Date: {{ slot.date }}</p>
+                        <p class="card-text">Time: {{ slot.start_time }} - {{slot.end_time}}</p>
+                        <p class="card-text lead">Teams Link: <a href="{{ slot.teams_link }}" target="_blank">Click here
+                                to join the meeting</a></p>
                     </div>
-                    {% endfor %}
                 </div>
             </div>
+            {% endfor %}
         </div>
         {% endif %}
 
-        <!-- Display attending slots cards for student users -->
-        {% if current_user.role == 'student' %}
-        <div class="row mt-5">
-            <div class="col-md-12">
-                <h3>Attending Slots</h3>
-                <div class="card-deck">
-                    {% for slot in current_user.profile.attending_slots %}
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title mb-3 text-center">{{ slot.topic }}</h5>
-                            <h6 class="card-subtitle mb-3">Subtopic: {{ slot.subtopic }}</h6>
-                            <p class="card-text">Date: {{ slot.date }}</p>
-                            <p class="card-text">Time: {{ slot.start_time }} - {{slot.end_time}}</p>
-                        </div>
+        <!-- Display Attending Slots for Student -->
+        {% if taken_attending_slots %}
+        <h1 class="mt-5 mb-4 text-center">Taken Attending Slots</h1>
+        <div class="row">
+            {% for slot in taken_attending_slots %}
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3 text-center">{{ slot.topic }}</h5>
+                        <h6 class="card-subtitle mb-3">Subtopic: {{ slot.subtopic }}</h6>
+                        <p class="card-text">Date: {{ slot.date }}</p>
+                        <p class="card-text">Time: {{ slot.start_time }} - {{slot.end_time}}</p>
+                        <p class="card-text lead">Teams Link: <a href="{{ slot.teams_link }}" target="_blank">Click here
+                                to join the meeting</a></p>
                     </div>
-                    {% endfor %}
                 </div>
             </div>
+            {% endfor %}
         </div>
         {% endif %}
+
     </div>
 </div>
 
@@ -100,8 +101,8 @@
     function hideMessages() {
         var messagesElements = document.querySelectorAll('.alert');
         if (messagesElements) {
-            setTimeout(function() {
-                messagesElements.forEach(function(element) {
+            setTimeout(function () {
+                messagesElements.forEach(function (element) {
                     element.style.display = 'none';
                 });
             }, 3000);  // 5000 milliseconds (5 seconds)

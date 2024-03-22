@@ -9,7 +9,8 @@
         <div class="row justify-content-center">
             <div class="col-md-6 mt-5">
                 <h2 class="text-center mb-4">Upload Content</h2>
-                <form method="post" action="{{ url_for('users.upload_content') }}" style="margin-bottom: 100px;">
+                <form method="post" action="{{ url_for('users.upload_content') }}" enctype="multipart/form-data"
+                    style="margin-bottom: 100px;">
                     {{ form.csrf_token }}
                     {{ render_messages(dismissible=True, dismiss_animate=True) }}
                     <div class="mb-3">
@@ -38,11 +39,13 @@
                         </select>
                     </div>
 
-                    {{ render_field(form.link, class="form-control mb-3", placeholder="Link") }}
+                    {{ render_field(form.link, class="form-control mb-3", placeholder="Paste Link") }}
+                    <p class="mb-2 text-center">OR</p>
+                    {{ render_field(form.file, class="form-control mb-3", placeholder="Upload File") }}
                     {{ render_field(form.content_type, class="form-select mb-3", id="content_type") }}
 
                     <input type="hidden" name="published" value="True">
-                    <button type="submit" class="btn btn-primary">Upload</button> 
+                    <button type="submit" class="btn btn-primary">Upload</button>
                     <a href="{{ url_for('users.dashboard') }}" class="btn btn-dark">Cancel</a>
                 </form>
             </div>
@@ -52,8 +55,8 @@
 
 <script>
     // Define the dictionaries containing topics and subtopics
-    const mathsCatalogue = {{ maths_catalogue|tojson|safe }};
-    const scienceCatalogue = {{ physical_science_catalogue|tojson|safe }};
+    const mathsCatalogue = {{ maths_catalogue| tojson | safe }};
+    const scienceCatalogue = {{ physical_science_catalogue| tojson | safe }};
 
     // Function to populate the topics based on the selected STEM
     function populateTopics() {
@@ -103,8 +106,8 @@
     function hideMessages() {
         var messagesElements = document.querySelectorAll('.alert');
         if (messagesElements) {
-            setTimeout(function() {
-                messagesElements.forEach(function(element) {
+            setTimeout(function () {
+                messagesElements.forEach(function (element) {
                     element.style.display = 'none';
                 });
             }, 3000);  // 5000 milliseconds (5 seconds)

@@ -11,7 +11,7 @@
       <section class="col-sm-11 col-md-8 col-lg-6 col-xl-5 mt-5">
         <div class="card shadow-sm border-0 mb-4">
           <div class="p-4">
-            <form action="{{ url_for('users.register') }}" method="post">
+            <form action="{{ url_for('users.register') }}" method="post" enctype="multipart/form-data">
               <div class="mb-3">
                 <h2 class="card-title text-center">Create Account</h2>
               </div>
@@ -32,6 +32,14 @@
             </div>
             <br>            
               {{ render_field(form.role, class="form-select", label="Choose your role") }}
+              
+              <!-- Conditional fields for volunteer -->
+              <div id="id-copy-field" class="mb-3" style="display: none;">
+                {{ render_field(form.id_copy) }}
+            </div>
+            <div id="certificates-field" class="mb-3" style="display: none;">
+                {{ render_field(form.certificates) }}
+            </div>            
               {{ render_field(form.password, placeholder="Choose your password") }}
               {{ render_field(form.remember) }}
               {{ render_field(form.submit, class="w-100") }}
@@ -46,6 +54,32 @@
     </div>
   </div>
 </main>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      const roleField = document.querySelector('.form-select');
+      const idCopyField = document.getElementById('id-copy-field');
+      const certificatesField = document.getElementById('certificates-field');
+
+      // Function to toggle visibility of additional fields for volunteers
+      function toggleVolunteerFields() {
+          if (roleField.value === 'volunteer') {
+              idCopyField.style.display = 'block';
+              certificatesField.style.display = 'block';
+          } else {
+              idCopyField.style.display = 'none';
+              certificatesField.style.display = 'none';
+          }
+      }
+
+      // Call the function initially
+      toggleVolunteerFields();
+
+      // Add event listener to role field
+      roleField.addEventListener('change', toggleVolunteerFields);
+  });
+</script>
+
 
 <script>
   // Function to hide messages after a delay

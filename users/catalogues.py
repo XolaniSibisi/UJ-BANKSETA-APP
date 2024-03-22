@@ -1,14 +1,14 @@
 maths_catalogue = {
-    "Sequences and series": [
+    "Number Patterns, Sequences and series": [
+        "Quadratic sequences",
         "Arithmetic sequences",
         "Geometric sequences",
-        "Series",
         "Finite arithmetic series",
         "Finite geometric series",
         "Infinite series",
     ],
     
-    "Functions": [
+    "Functions, Inverses and Logarithms": [
         "Functions and relations",
         "Inverse functions",
         "Linear functions",
@@ -17,7 +17,7 @@ maths_catalogue = {
         "Logarithmic functions",
     ],
     
-    "Finance": [
+    "Financial Mathematics": [
         "Calculating the period of an investment",
         "Annuities",
         "Future value annuities",
@@ -80,7 +80,6 @@ maths_catalogue = {
 
 physical_science_catalogue = {
     "Momentum and impulse": [
-        "Introduction",
         "Momentum",
         "Newton's Second Law revisited",
         "Conservation of momentum",
@@ -88,7 +87,6 @@ physical_science_catalogue = {
         "Physics in action: Impulse",
     ],
     "Vertical projectile motion in one dimension": [
-        "Introduction",
         "Vertical projectile motion",
     ],
     "Organic molecules": [
@@ -101,19 +99,16 @@ physical_science_catalogue = {
         "Plastics and polymers",
     ],
     "Work, energy and power": [
-        "Introduction",
         "Work",
         "Work-energy theorem",
         "Conservation of energy",
         "Power",
     ],
     "Doppler Effect": [
-        "Introduction",
         "The Doppler effect with sound",
         "The Doppler effect with light",
     ],
     "Rate and Extent of Reaction": [
-        "Introduction",
         "Rate of reaction and factors affecting rate",
         "Measuring rate of reaction",
         "Mechanism of reaction and catalysis",
@@ -131,18 +126,15 @@ physical_science_catalogue = {
         "Application of acids and bases",
     ],
     "Electric circuits": [
-        "Introduction",
         "Series and parallel resistor networks",
         "Bateries and internal resistance",
         "Evaluating internal resistance in circuits",
     ],
     "Electrodynamics": [
-        "Introduction",
         "Electrical machines - generators and motors",
         "Alternating current",
     ],
     "Optical phenomena and properties of matter": [
-        "Introduction",
         "The photoelectric effect",
         "Emission and Absorption spectra",
     ],
@@ -156,7 +148,6 @@ physical_science_catalogue = {
         "Applications of electrochemistry",
     ],
     "The chemical industry": [
-        "Introduction",
         "Nutrients",
         "Fertilisers",
         "The fertilizer industry",

@@ -51,42 +51,44 @@
             </div>
         </div>
         <!-- Display taken teaching slots for volunteer users -->
-{% if current_user.role == 'volunteer' %}
-<h1 class="mt-5 mb-4 text-center">Taken Teaching Slots</h1>
-<div class="row">
-    {% for slot in taken_teaching_slots %}
-    <div class="col-md-4">
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title mb-3 text-center">{{ slot.topic }}</h5>
-                <h6 class="card-subtitle mb-3">Subtopic: {{ slot.subtopic }}</h6>
-                <p class="card-text">Date: {{ slot.date }}</p>
-                <p class="card-text">Time: {{ slot.start_time }} - {{slot.end_time}}</p>
+        {% if current_user.role == 'volunteer' %}
+        <h1 class="mt-5 mb-4 text-center">Taken Teaching Slots</h1>
+        <div class="row">
+            {% for slot in taken_teaching_slots %}
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3 text-center">{{ slot.topic }}</h5>
+                        <h6 class="card-subtitle mb-3">Subtopic: {{ slot.subtopic }}</h6>
+                        <p class="card-text">Date: {{ slot.date }}</p>
+                        <p class="card-text">Time: {{ slot.start_time }} - {{slot.end_time}}</p>
+                        <p class="card-text lead">Teams Link: <a href="{{ slot.teams_link }}" target="_blank">Click here to join the meeting</a></p>
+                    </div>
+                </div>
             </div>
+            {% endfor %}
         </div>
-    </div>
-    {% endfor %}
-</div>
-{% endif %}
+        {% endif %}
 
-<!-- Display taken attending slots for student users -->
-{% if current_user.role == 'student' %}
-<h1 class="mt-5 mb-4 text-center">Taken Attending Slots</h1>
-<div class="row">
-    {% for slot in taken_attending_slots %}
-    <div class="col-md-4">
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title mb-3 text-center">{{ slot.topic }}</h5>
-                <h6 class="card-subtitle mb-3">Subtopic: {{ slot.subtopic }}</h6>
-                <p class="card-text">Date: {{ slot.date }}</p>
-                <p class="card-text">Time: {{ slot.start_time }} - {{slot.end_time}}</p>
+        <!-- Display taken attending slots for student users -->
+        {% if current_user.role == 'student' %}
+        <h1 class="mt-5 mb-4 text-center">Taken Attending Slots</h1>
+        <div class="row">
+            {% for slot in taken_attending_slots %}
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3 text-center">{{ slot.topic }}</h5>
+                        <h6 class="card-subtitle mb-3">Subtopic: {{ slot.subtopic }}</h6>
+                        <p class="card-text">Date: {{ slot.date }}</p>
+                        <p class="card-text">Time: {{ slot.start_time }} - {{slot.end_time}}</p>
+                        <p class="card-text lead">Teams Link: <a href="{{ slot.teams_link }}" target="_blank">Click here to join the meeting</a></p>
+                    </div>
+                </div>
             </div>
+            {% endfor %}
         </div>
-    </div>
-    {% endfor %}
-</div>
-{% endif %}
+        {% endif %}
 
     </div>
 </div>
@@ -96,8 +98,8 @@
     function hideMessages() {
         var messagesElements = document.querySelectorAll('.alert');
         if (messagesElements) {
-            setTimeout(function() {
-                messagesElements.forEach(function(element) {
+            setTimeout(function () {
+                messagesElements.forEach(function (element) {
                     element.style.display = 'none';
                 });
             }, 3000);  // 5000 milliseconds (5 seconds)

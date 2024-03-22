@@ -64,3 +64,19 @@ def send_reset_email(user=None):
     {confirmation_link}
     """
     send_mail(subject=subject, recipients=recipient, body=content)
+    
+def send_notification_email(users, subject, body):
+    """
+    Send email notification to the specified users.
+
+    Parameters:
+    - users: List of User objects.
+    - subject: Subject of the email.
+    - body: Body of the email.
+    """
+    for user in users:
+        msg = Message(subject,
+                      sender=os.environ.get('MAIL_USERNAME'),
+                      recipients=[user.email])
+        msg.body = body
+        mail.send(msg)

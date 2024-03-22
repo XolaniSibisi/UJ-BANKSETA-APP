@@ -192,7 +192,7 @@ class Content(db.Model):
     topic = db.Column(db.String(200), nullable=False)
     subtopic = db.Column(db.String(200), nullable=False)
     content_type = db.Column(db.String(20), nullable=False)
-    link = db.Column(db.String(250), nullable=False)
+    link = db.Column(db.String(250), nullable=True)
     stem = db.Column(db.String(250))
     published = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
@@ -201,7 +201,7 @@ class Content(db.Model):
     user_id = db.Column(db.String(38), db.ForeignKey('user.id', ondelete="CASCADE"), nullable=False)
 
     def __repr__(self):
-        return f"Content(id={self.id}, topic={self.topic}, subtopic={self.subtopic}, content_type={self.content_type}, link={self.link}, stem={self.stem})"
+        return f"Content(id={self.id}, topic={self.topic}, subtopic={self.subtopic}, content_type={self.content_type}, file_path={self.file_path}, link={self.link}, stem={self.stem})"
 
     def save(self):
         db.session.add(self)
@@ -249,42 +249,6 @@ class Content(db.Model):
         user = User.query.filter_by(username=username).first()
         return Content.query.filter_by(published=False, user_id=user.id).all()
     
-class Counter(db.Model):
-    """
-    A Counter model class.
-    """
-
-    __tablename__ = 'counter'
-
-    id = db.Column(db.String(38), primary_key=True)
-    name = db.Column(db.String(200), unique=True)
-    count = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.now)
-    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
-
-    def __repr__(self):
-        return f"Counter(id={self.id}, name={self.name}, count={self.count})"
-
-    def save(self):
-        db.session.add(self)
-        db.session.commit()
-        
-    def increment(self):
-        self.count += 1
-        db.session.commit()
-        
-    def decrement(self):
-        self.count -= 1
-        db.session.commit()
-        
-    def get_absolute_url(self):
-        return url_for('users.counter', counter_id=self.id)
-    
-    def get_edit_url(self):
-        return url_for('users.edit_counter', counter_id=self.id)
-    
-    def get_delete_url(self):
-        return url_for('users.delete_counter', counter_id=self.id)
     
 class Slots(db.Model):
     """
@@ -299,6 +263,8 @@ class Slots(db.Model):
     date = db.Column(db.Date, nullable=False)
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
+    teams_link = db.Column(db.String(500), nullable=False)
+    status = db.Column(db.String(20), default='available')  # Add status field
     stem = db.Column(db.String(250))
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
@@ -312,7 +278,7 @@ class Slots(db.Model):
     user_id = db.Column(db.String(38), db.ForeignKey('user.id', ondelete="CASCADE"), nullable=False)
 
     def __repr__(self):
-        return f"Slots(id={self.id}, topic={self.topic}, subtopic={self.subtopic}, date={self.date}, start_time={self.start_time}, end_time={self.end_time}, stem={self.stem})"
+        return f"Slots(id={self.id}, topic={self.topic}, subtopic={self.subtopic}, date={self.date}, start_time={self.start_time}, end_time={self.end_time}, teams_link={self.teams_link} stem={self.stem})"
 
     def save(self):
         db.session.add(self)

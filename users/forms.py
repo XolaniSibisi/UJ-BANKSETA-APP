@@ -2,6 +2,7 @@ from flask_wtf.form import FlaskForm
 from flask_wtf.file import FileAllowed, FileSize
 from flask_wtf.recaptcha import RecaptchaField
 from flask_datepicker import datepicker
+from wtforms.validators import URL
 from wtforms.fields import (
     StringField,
     PasswordField,
@@ -12,7 +13,8 @@ from wtforms.fields import (
     TextAreaField,
     SelectField,
     DateField,
-    TimeField
+    TimeField,
+    FileField
 )
 from wtforms.validators import (
     DataRequired,
@@ -45,6 +47,11 @@ class RegisterForm(FlaskForm):
                        )
     role = SelectField('Role', choices=[('admin', 'Admin'), ('student', 'Student'), (
         'volunteer', 'Volunteer')], validators=[DataRequired()])
+    
+    # Additional fields for volunteer
+    id_copy = FileField('Upload ID Copy', validators=[FileAllowed(['pdf'], 'Please upload PDF only.'), FileSize(max_size=2000000, message='ID copy size should not greater than 2MB.'), DataRequired()])
+    certificates = FileField('Upload Certificates', validators=[FileAllowed(['pdf'], 'Please upload PDF only.'), FileSize(max_size=2000000, message='Certificates size should not greater than 2MB.'), DataRequired()])
+    
     password = PasswordField('Password',
                              validators=[DataRequired(), Length(
                                  8, 20), StrongPassword()]
@@ -154,7 +161,8 @@ class UploadContentForm(FlaskForm):
         ('additional_problem', 'Additional Problem'),
         ('video', 'Video')
     ], validators=[InputRequired()])
-    link = StringField('Link', validators=[InputRequired()])
+    file = FileField('Upload File', validators=[FileAllowed(['pdf', 'docx', 'doc', 'ppt', 'pptx', 'xlsx', 'xls', 'csv', 'mp4', 'avi', 'mkv', 'mov', 'flv', 'wmv', 'webm', 'ogg', 'mp3', 'wav', 'flac', 'aac', 'wma', 'm4a', 'm4p', 'm4r', 'm4b', 'm4v', '3gp', '3g2', 'amr', 'awb'])])
+    link = StringField('Link', validators=[])
     stem = SelectField('STEM', choices=[
                        ('maths', 'Maths'), ('science', 'Science')], validators=[InputRequired()])
     topic = SelectField('Topic', choices=[], validators=[InputRequired()])
@@ -172,5 +180,6 @@ class CreateSlotForm(FlaskForm):
                      format=['%m-%d-%Y', '%Y-%m-%d', '%m/%d/%Y', '%Y/%m/%d', '%m.%d.%Y', '%Y.%m.%'])
     start_time = TimeField('Start Time', validators=[DataRequired()], format='%H:%M')
     end_time = TimeField('End Time', validators=[DataRequired()], format='%H:%M')
+    teams_link = StringField('Teams Meeting Link', validators=[URL(), InputRequired()], render_kw={"placeholder": "Enter Teams meeting link"})
     submit = SubmitField('Create Slot')
     
