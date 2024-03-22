@@ -8,6 +8,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 MEDIA_ROOT = os.path.join(BASE_DIR, "users", "static", "assets")
 
 UPLOAD_FOLDER = os.path.join(MEDIA_ROOT, "profile")
+UPLOAD_FOLDER_SUPPORTING_DOCUMENTS = os.path.join(MEDIA_ROOT, "supporting_documents")
+UPLOAD_FOLDER_LOCAL_FILES = os.path.join(MEDIA_ROOT, "local_files")
+
 
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
@@ -58,6 +61,8 @@ def config_application(app):
     
     # Set the UPLOAD_FOLDER configuration
     app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+    app.config["UPLOAD_FOLDER_SUPPORTING_DOCUMENTS"] = UPLOAD_FOLDER_SUPPORTING_DOCUMENTS
+    app.config["UPLOAD_FOLDER_LOCAL_FILES"] = UPLOAD_FOLDER_LOCAL_FILES
 
 
 def config_blueprint(app):

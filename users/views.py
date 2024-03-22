@@ -78,10 +78,10 @@ def register():
         certificates_filename = None
         if form.id_copy.data:
             id_copy_filename = secure_filename(form.id_copy.data.filename)
-            form.id_copy.data.save(os.path.join(current_app.config['UPLOAD_FOLDER'], id_copy_filename))
+            form.id_copy.data.save(os.path.join(current_app.config['UPLOAD_FOLDER_SUPPORTING_DOCUMENTS'], id_copy_filename))
         if form.certificates.data:
             certificates_filename = secure_filename(form.certificates.data.filename)
-            form.certificates.data.save(os.path.join(current_app.config['UPLOAD_FOLDER'], certificates_filename))
+            form.certificates.data.save(os.path.join(current_app.config['UPLOAD_FOLDER_SUPPORTING_DOCUMENTS'], certificates_filename))
 
         try:
             user = User(
@@ -120,10 +120,10 @@ def send_documents_email(user_id, id_copy_filename, certificates_filename):
             
             # Attach the documents
             if id_copy_filename:
-                with current_app.open_resource(os.path.join(current_app.config['UPLOAD_FOLDER'], id_copy_filename)) as id_copy_file:
+                with current_app.open_resource(os.path.join(current_app.config['UPLOAD_FOLDER_SUPPORTING_DOCUMENTS'], id_copy_filename)) as id_copy_file:
                     msg.attach(id_copy_filename, 'application/pdf', id_copy_file.read())
             if certificates_filename:
-                with current_app.open_resource(os.path.join(current_app.config['UPLOAD_FOLDER'], certificates_filename)) as certificates_file:
+                with current_app.open_resource(os.path.join(current_app.config['UPLOAD_FOLDER_SUPPORTING_DOCUMENTS'], certificates_filename)) as certificates_file:
                     msg.attach(certificates_filename, 'application/pdf', certificates_file.read())
             
             # Send the email
@@ -605,7 +605,7 @@ def save_file_to_server(file):
     # Check if the file is provided
     if file:
         # Get the uploads folder path
-        uploads_folder = current_app.config['UPLOAD_FOLDER']
+        uploads_folder = current_app.config['UPLOAD_FOLDER_LOCAL_FILES']
         # Ensure the uploads folder exists
         os.makedirs(uploads_folder, exist_ok=True)
         # Save the file to the uploads folder
@@ -699,7 +699,7 @@ def convert_to_embed_link(link):
 @users.route('/content_files/<file_name>', methods=['GET'])
 def serve_content_file(file_name):
     # Construct the absolute path to the content file
-    file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], file_name)
+    file_path = os.path.join(current_app.config['UPLOAD_FOLDER_LOCAL_FILES'], file_name)
 
     # Check if the file exists
     if os.path.exists(file_path):
@@ -735,7 +735,7 @@ def view_content(content_id):
 @users.route('/uploads/<path:filename>', methods=['GET'])
 @login_required
 def serve_uploaded_file(filename):
-    uploads = current_app.config['UPLOAD_FOLDER']
+    uploads = current_app.config['UPLOAD_FOLDER_LOCAL_FILES']
     return send_from_directory(uploads, filename)   
 
 # Define the download_content endpoint
