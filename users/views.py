@@ -5,6 +5,7 @@ from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 from flask import send_from_directory
 from flask import current_app
+from collections import Counter
 import logging
 from flask_login import (
     current_user,
@@ -818,9 +819,42 @@ def dashboard():
     else:
         last_volunteer_registration_date = None
 
+    # Calculate the total number of students attending slots
+    attended_slots = Slots.query.filter(Slots.student_id.isnot(None)).all()
+
+    # Extract the subtopics of attended slots
+    attended_subtopics = [slot.subtopic for slot in attended_slots]
+
+    # Use Counter to count the occurrences of each subtopic
+    subtopic_counter = Counter(attended_subtopics)
+
+    # Find the most common subtopic
+    most_common_subtopic = subtopic_counter.most_common(1)
+    if most_common_subtopic:
+        most_popular_attended_subtopic = most_common_subtopic[0][0]
+    else:
+        most_popular_attended_subtopic = "No attended slots yet"
+        
+    # Query the database to retrieve all slots
+    all_slots = Slots.query.all()
+
+    # Count the total number of slots
+    total_slots = len(all_slots)
+
+    # Count the number of slots that have been taken
+    taken_slots = len([slot for slot in all_slots if slot.status == 'taken'])
+
+    # Calculate the average
+    if total_slots > 0:
+        average_taken_slots = taken_slots / total_slots
+    else:
+        average_taken_slots = 0
+        
+    
     return render_template('dashboard.html', num_students=num_students, num_volunteers=num_volunteers,
                            last_student_registration_date=last_student_registration_date,
-                           last_volunteer_registration_date=last_volunteer_registration_date, num_slots_taken=num_slots_taken, num_slots_attendance=num_slots_attendance, all_content=all_content)
+                           last_volunteer_registration_date=last_volunteer_registration_date, num_slots_taken=num_slots_taken, 
+                           num_slots_attendance=num_slots_attendance, all_content=all_content, average_taken_slots=average_taken_slots, most_popular_attended_subtopic=most_popular_attended_subtopic)
 
 # Route to edit content
 @users.route('/edit_content/<content_id>', methods=['GET'])
