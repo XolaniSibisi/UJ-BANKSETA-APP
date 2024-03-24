@@ -146,6 +146,11 @@ class Profile(db.Model):
             
         self.avatar = get_unique_filename(profile_image.filename)
         profile_image.save(os.path.join(UPLOAD_FOLDER, self.avatar))
+        
+    def get_avatar(self):
+        if self.avatar:
+            return url_for('static', filename=f'assets/profile/{self.avatar}')
+        return url_for('static', filename='assets/images/default_avator.jpg')
 
     def save(self):
         db.session.add(self)
@@ -201,7 +206,7 @@ class Content(db.Model):
     user_id = db.Column(db.String(38), db.ForeignKey('user.id', ondelete="CASCADE"), nullable=False)
 
     def __repr__(self):
-        return f"Content(id={self.id}, topic={self.topic}, subtopic={self.subtopic}, content_type={self.content_type}, file_path={self.file_path}, link={self.link}, stem={self.stem})"
+        return f"Content(topic={self.topic}, subtopic={self.subtopic}, content_type={self.content_type}, link={self.link}, stem={self.stem})"
 
     def save(self):
         db.session.add(self)
@@ -278,7 +283,7 @@ class Slots(db.Model):
     user_id = db.Column(db.String(38), db.ForeignKey('user.id', ondelete="CASCADE"), nullable=False)
 
     def __repr__(self):
-        return f"Slots(id={self.id}, topic={self.topic}, subtopic={self.subtopic}, date={self.date}, start_time={self.start_time}, end_time={self.end_time}, teams_link={self.teams_link} stem={self.stem})"
+        return f"Slots(topic={self.topic}, subtopic={self.subtopic}, date={self.date}, start_time={self.start_time}, end_time={self.end_time}, teams_link={self.teams_link} stem={self.stem})"
 
     def save(self):
         db.session.add(self)
@@ -308,3 +313,4 @@ class Slots(db.Model):
         if user:
             return self.get_user_slots(user.id)
         return []
+

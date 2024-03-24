@@ -5,6 +5,7 @@ from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 from flask import send_from_directory
 from flask import current_app
+from sqlalchemy import or_
 from collections import Counter
 import logging
 from flask_login import (
@@ -539,11 +540,67 @@ def forum():
 def related_links():
     return render_template('related_links.html')
 
-
-@users.route('/search', methods=['GET', 'POST'], strict_slashes=False)
+@users.route('/search', methods=['POST'], strict_slashes=False)
 @login_required
 def search():
-    return render_template('search.html')
+    search_query = request.form.get('searched')
+    
+    print("Search query:", search_query)
+    
+    # Check if search query is empty
+    if not search_query:
+        return render_template('search.html', search_results=[])
+
+    # Initialize an empty list to store search results
+    search_results = []
+
+    # Search in User model
+    user_results = User.query.filter(or_(
+        User.id.ilike(f'%{search_query}%'),
+        User.username.ilike(f'%{search_query}%'),
+        User.first_name.ilike(f'%{search_query}%'),
+        User.last_name.ilike(f'%{search_query}%'),
+        User.email.ilike(f'%{search_query}%'),
+        User.role.ilike(f'%{search_query}%')
+    )).all()
+    search_results.extend(user_results)
+
+    # Search in Profile model
+    profile_results = Profile.query.filter(or_(
+        Profile.bio.ilike(f'%{search_query}%'),
+        Profile.avatar.ilike(f'%{search_query}%')
+    )).all()
+    search_results.extend(profile_results)
+
+    # Search in Content model
+    content_results = Content.query.filter(or_(
+        Content.topic.ilike(f'%{search_query}%'),
+        Content.subtopic.ilike(f'%{search_query}%'),
+        Content.content_type.ilike(f'%{search_query}%'),
+        Content.link.ilike(f'%{search_query}%')
+    )).all()
+    search_results.extend(content_results)
+
+    # Search in Slots model
+    slots_results = Slots.query.filter(or_(
+        Slots.id.ilike(f'%{search_query}%'),
+        Slots.user_id.ilike(f'%{search_query}%'),
+        Slots.status.ilike(f'%{search_query}%'),
+        Slots.topic.ilike(f'%{search_query}%'),
+        Slots.subtopic.ilike(f'%{search_query}%'),
+        Slots.date.ilike(f'%{search_query}%'),
+        Slots.teams_link.ilike(f'%{search_query}%')
+    )).all()
+    
+    # Add 'type' attribute to slots_results
+    for slot in slots_results:
+        slot.type = 'slots'
+
+    search_results.extend(slots_results)
+    
+    # Render the template with the search results
+    return render_template('search.html', search_results=search_results)
+
 
 def preprocess_content_data(content_list):
     content_data = {}
