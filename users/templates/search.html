@@ -9,13 +9,14 @@
 
     {% if search_results %}
         {% set user_results = search_results | selectattr("__class__.__name__", "equalto", "User") | list %}
-        {% if user_results %}
+        {% if user_results and current_user.role == 'admin' %}
             <table class="table table-bordered">
               <thead>
                 <tr>
                   <th>Username</th>
                   <th>Email</th>
                   <th>Role</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -24,6 +25,19 @@
                   <td>{{ result.username }}</td>
                   <td>{{ result.email }}</td>
                   <td>{{ result.role }}</td>
+                  <td class="align-middle">
+                    <div style="display: flex; justify-content: center;">
+                        <a href="{{ url_for('users.view_user', user_id=result.id) }}" class="btn btn-primary"
+                            style="margin-right: 5px;">View</a>
+                        <form action="{{ url_for('users.delete_user', user_id=result.id) }}" method="post"
+                            style="margin-left: 5px; display: inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="student_id" value="{{ result.id }}">
+                            <button type="submit" class="btn btn-danger"
+                                onclick="return confirm('Are you sure you want to delete this user?')">Delete</button>
+                        </form>
+                    </div>
+                </td>
                 </tr>
                 {% endfor %}
               </tbody>
