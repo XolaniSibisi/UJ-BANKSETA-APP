@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% from 'bootstrap5/form.html' import render_field %}
+{% from 'bootstrap5/utils.html' import render_messages %}
+{% block title %}User Post{% endblock %}
+
+
+{% block body %}
+<h1 class="mb-3 mt-5 text-center" style="padding-top: 1.5rem;">Posts by {{ user.username }} ({{ posts.total }}) Posts
+</h1>
+{% for post in posts.items %}
+<article class="container content-section">
+  <div class="row justify-content-center"> <!-- Center the column -->
+    <div class="col-md-4 mt-3">
+      <div class="d-flex justify-content-center">
+        {% if author_profile and author_profile.avatar %}
+        <img class="rounded-circle mt-3 mb-2" style="object-fit: cover; width: 180px; height: 180px;"
+          src="{{ url_for('static', filename='assets/profile/' + author_profile.avatar) }}">
+        {% else %}
+        <img src="{{ url_for('static', filename='assets/images/default_avator.jpg') }}" alt="profile image"
+          class="rounded-circle mt-3 mb-2" style="object-fit: cover; width: 180px; height: 180px;" />
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="media-body">
+    <div class="article-metadata">
+      <a class="mr-2" href="{{ url_for('users.user_posts', username=post.author.username) }}">{{ post.author.username
+        }}</a>
+      <small class="text-muted">{{ format_time_difference(current_date-post.date_posted) }}</small>
+    </div>
+    <h2><a class="article-title" href="{{ url_for('users.post', post_id=post.id) }}">{{ post.title }}</a></h2>
+    <p class="article-content">{{ post.content }}</p>
+  </div>
+  {% endfor %}
+  {% for page_num in posts.iter_pages(left_edge=1,left_current=1,right_current=2) %}
+  {% if page_num %}
+  {% if posts.page == page_num %}
+  <a class="btn btn-info mb-4" href="{{ url_for('users.user_posts', username=user.username, page=page_num) }}">{{
+    page_num }}</a>
+  {% else %}
+  <a class="btn btn-outline-info mb-4"
+    href="{{ url_for('users.user_posts', username=user.username, page=page_num) }}">{{ page_num }}</a>
+  {% endif %}
+  {% else %}
+  ...
+  {% endif %}
+  {% endfor %}
+</article>
+{% endblock %}

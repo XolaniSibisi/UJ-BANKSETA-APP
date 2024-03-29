@@ -5,7 +5,7 @@ from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 from flask import send_from_directory
 from flask import current_app
-from sqlalchemy import or_
+from sqlalchemy import or_, func, desc
 from collections import Counter
 import logging
 from flask_login import (
@@ -16,7 +16,7 @@ from flask_login import (
 )
 
 from users.extensions import database as db, csrf
-from users.models import User, Profile, Content, Contact, Slots
+from users.models import User, Profile, Content, Contact, Slots, Post, Comment
 from users.catalogues import maths_catalogue, physical_science_catalogue
 from users.forms import (
     RegisterForm,
@@ -28,7 +28,9 @@ from users.forms import (
     ContactForm,
     UploadContentForm,
     EditUserProfileForm,
-    CreateSlotForm
+    CreateSlotForm,
+    PostForm,
+    CommentForm
 )
 from users.utils import (
     unique_security_token,
@@ -55,7 +57,6 @@ This accounts blueprint defines routes and templates related to user management
 within our application.
 """
 users = Blueprint('users', __name__, template_folder='templates')
-
 
 CORS(users)
 
@@ -421,6 +422,7 @@ def admin_profile():
 
 
 @users.route('/view_user/<user_id>', methods=['GET'])
+@login_required
 def view_user(user_id):
     user = User.query.get_or_404(user_id)
     profile = Profile.query.filter_by(user_id=user_id).first_or_404()
@@ -532,13 +534,163 @@ def edit_profile():
 @users.route('/forum', methods=['GET', 'POST'], strict_slashes=False)
 @login_required
 def forum():
-    return render_template('forum.html')
+    form = PostForm()
+    posts = Post.query.all()
+    all_users_count = User.query.filter(User.role != 'admin').count()
+    all_post = len(Post.query.all())
+    all_comments_count = db.session.query(Comment).count()
+    new_member = User.query.order_by(desc(User.created_at)).distinct(User.username).first()
+    all_topics_count = Post.query.with_entities(func.count(Post.title.distinct())).scalar()
+    current_date = datetime.now()
+    user = User.query.get_or_404(current_user.id)
+    page = request.args.get('page',1,type=int)
+    posts = Post.query.order_by(Post.date_posted.desc()).paginate(page=page,per_page=5)
+    return render_template('forum.html', posts=posts, form=form, current_date=current_date, format_time_difference=format_time_difference, all_users_count=all_users_count, all_post=all_post, all_topics_count=all_topics_count, new_member=new_member, all_comments_count=all_comments_count)
 
-
-@users.route('/related_links', methods=['GET', 'POST'], strict_slashes=False)
+def format_time_difference(delta):
+    if delta.days == 0:
+        seconds = delta.seconds
+        if seconds < 60:
+            return f"{seconds} seconds ago"
+        elif seconds < 3600:
+            minutes = seconds // 60
+            return f"{minutes} minutes ago"
+        else:
+            hours = seconds // 3600
+            return f"{hours} hours ago"
+    else:
+        return f"{delta.days} day(s) ago"
+    
+@users.route("/post/new",methods=['POST','GET'])
 @login_required
-def related_links():
-    return render_template('related_links.html')
+def new_post():
+    form = PostForm()
+    if form.validate_on_submit():
+        post = Post(title=form.title.data,content=form.content.data,author=current_user)
+        db.session.add(post)
+        db.session.commit()
+        
+        flash('Your post has been created !','success')
+        return redirect(url_for('users.forum'))
+    return render_template('create_post.html',title="Create Post",form=form,legend='Update Post')
+
+
+@users.route("/post/<int:post_id>", methods=['GET', 'POST'])
+@login_required
+def post(post_id):
+    post = Post.query.get_or_404(post_id)
+    form = CommentForm()
+    comments = Comment.query.filter_by(post_id=post_id).all()
+    all_comments_count = db.session.query(Comment).count()
+    current_date = datetime.now()
+    date_posted=post.date_posted.strftime('%m %d, %Y')
+    
+    # Retrieve profile information for each comment author
+    comment_profiles = {}
+    for comment in comments:
+        profile = Profile.query.filter_by(user_id=comment.author.id).first_or_404()
+        comment_profiles[comment.id] = profile
+    
+    # Retrieve profile information for the post author
+    post_profile = Profile.query.filter_by(user_id=post.author.id).first_or_404()
+    
+    if form.validate_on_submit():
+        comment = Comment(body=form.body.data, author=current_user, user_id=current_user.id, post_id=post_id)
+        db.session.add(comment)
+        db.session.commit()
+        return redirect(url_for('users.post', post_id=post_id))
+    
+    return render_template('post.html', title=post.title, post=post, current_date=current_date, format_time_difference=format_time_difference, form=form, comments=comments, comment_profiles=comment_profiles, post_profile=post_profile, all_comments_count=all_comments_count, date_posted=date_posted)
+
+@users.route("/increment_view_count/<int:post_id>", methods=['POST'])
+@login_required
+def increment_view_count(post_id):
+    post = Post.query.get_or_404(post_id)
+    
+    if post is None:
+        abort(404, "Post not found")
+    
+    if current_user.id != post.user_id:
+        # Increment view count
+        post.views = post.views + 1 if post.views is not None else 1
+        db.session.commit()
+        return jsonify({'success': True, 'views': post.views}), 200
+    else:
+        return jsonify({'success': False, 'message': 'View count not incremented for own post'}), 400
+
+@users.route("/post/<int:post_id>/update", methods=['POST','GET'])
+@login_required
+def update_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    if post.author != current_user:
+        abort(403)
+    form = PostForm()
+    if form.validate_on_submit():
+        post.title = form.title.data
+        post.content = form.content.data
+        db.session.commit()
+        flash('Your post has been updated !','success')
+        return redirect(url_for('users.post',post_id=post.id))
+    elif request.method == 'GET':
+        form.title.data = post.title
+        form.content.data = post.content    
+    return render_template('create_post.html',title="Update Post",form=form,legend='Update Post')
+
+@users.route("/delete/<int:post_id>/update",methods=['POST'])
+@login_required
+def delete_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    if post.author != current_user:
+        abort(403)
+    db.session.delete(post)
+    db.session.commit()
+    flash("Your post has been deleted ", 'success')
+    return redirect(url_for('users.forum'))
+
+@users.route("/delete-comment/<comment_id>")
+@login_required
+def delete_comment(comment_id):
+    comment = Comment.query.filter_by(id=comment_id).first()
+
+    if not comment:
+        flash('Comment does not exist.', category='error')
+    elif current_user.id != comment.author and current_user.id != comment.post.author:
+        flash('You do not have permission to delete this comment.', category='error')
+    else:
+        db.session.delete(comment)
+        db.session.commit()
+
+    return redirect(url_for('users.forum'))
+
+@users.route("/like-post/<post_id>", methods=['POST'])
+@login_required
+def like(post_id):
+    post = Post.query.filter_by(id=post_id).first()
+    like = Like.query.filter_by(
+        author=current_user.id, post_id=post_id).first()
+
+    if not post:
+        return jsonify({'error': 'Post does not exist.'}, 400)
+    elif like:
+        db.session.delete(like)
+        db.session.commit()
+    else:
+        like = Like(author=current_user.id, post_id=post_id)
+        db.session.add(like)
+        db.session.commit()
+
+    return jsonify({"likes": len(post.likes), "liked": current_user.id in map(lambda x: x.author, post.likes)})
+
+@users.route("/user/<string:username>",methods=['GET'])
+@login_required
+def user_posts(username):
+    current_date = datetime.now()
+    profile = Profile.query.filter_by(user_id=current_user.id).first_or_404()
+    page = request.args.get('page',1,type=int)
+    user= User.query.filter_by(username = username).first_or_404()
+    author_profile = Profile.query.filter_by(user_id=user.id).first()
+    posts = Post.query.filter_by(author = user).order_by(Post.date_posted.desc()).paginate(page=page,per_page=5)
+    return render_template('user_post.html',posts=posts,title=username+" Posts",user=user, current_date=current_date, format_time_difference=format_time_difference, author_profile=author_profile)
 
 @users.route('/search', methods=['POST'], strict_slashes=False)
 @login_required
@@ -1058,8 +1210,8 @@ def update_slot():
 
         # Extract time component from datetime strings and convert to time objects
         slot.date = datetime.strptime(request.form.get('date'), '%Y-%m-%d').date()
-        slot.start_time = datetime.strptime(request.form.get('start_time'), '%H:%M:%S').time()
-        slot.end_time = datetime.strptime(request.form.get('end_time'), '%H:%M:%S').time()
+        slot.start_time = datetime.strptime(request.form.get('start_time'), '%H:%M').time()
+        slot.end_time = datetime.strptime(request.form.get('end_time'), '%H:%M').time()
 
     # Save the updated slot
     db.session.commit()

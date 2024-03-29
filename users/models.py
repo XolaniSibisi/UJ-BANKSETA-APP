@@ -18,6 +18,7 @@ from users.utils import (
 
 from datetime import datetime, timedelta
 import os
+from sqlalchemy.sql import func
 
 class User(db.Model, UserMixin):
     """
@@ -33,16 +34,17 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(128), nullable=False)
     role = db.Column(db.String(20), nullable=False)
-
     active = db.Column(db.Boolean, default=False, nullable=False)
     security_token = db.Column(db.String(138), default=unique_security_token)
     is_send = db.Column(db.DateTime, default=datetime.now)
     change_email = db.Column(db.String(120), default="")
-
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
-
+    
+    posts=db.relationship('Post',backref='author',lazy=True)
+    comments = db.relationship("Comment", backref="author", lazy=True)
     profile = db.Relationship('Profile', backref='user', cascade='save-update, merge, delete')
+    likes = db.relationship("Like", backref="author", lazy=True)
     
     def is_admin(self):
         return self.role == 'admin'
@@ -109,7 +111,7 @@ class User(db.Model, UserMixin):
         return expiry_time <= current_time
         
     def __repr__(self):
-        return '<User> {}'.format(self.email)
+        return format(self.username)
 
 
 class Profile(db.Model):
@@ -313,4 +315,61 @@ class Slots(db.Model):
         if user:
             return self.get_user_slots(user.id)
         return []
+    
+class Post(db.Model):
+    """
+    A Post model class.
+    """
 
+    __tablename__ = 'post'
+
+    id = db.Column(db.Integer,primary_key=True)
+    title = db.Column(db.String(100),nullable=False)
+    date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    content = db.Column(db.Text,nullable=False)
+    views = db.Column(db.Integer, default=0)
+    user_id = db.Column(db.Integer,db.ForeignKey("user.id"),nullable=False)
+    comments = db.relationship("Comment", backref="post", passive_deletes=True, lazy=True)
+    likes = db.relationship("Like", backref="post", passive_deletes=True, lazy=True)
+    
+    def __repr__(self):
+        return f"Post('{self.title}', '{self.content}', '{self.date_posted}')"
+    
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+        
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+        
+class Comment(db.Model):
+    """
+    A Comment model class.
+    """
+
+    __tablename__ = 'comment'
+
+    id = db.Column(db.Integer,primary_key=True)
+    date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    body = db.Column(db.Text,nullable=False)
+    user_id = db.Column(db.Integer,db.ForeignKey("user.id"),nullable=False)
+    post_id = db.Column(db.Integer,db.ForeignKey("post.id"),nullable=False)
+    
+    def __repr__(self):
+        return f"Comment('{self.body}', '{self.date_posted}')"
+    
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+        
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
+class Like(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    date_created = db.Column(db.DateTime(timezone=True), default=func.now())
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey("post.id", ondelete="CASCADE"), nullable=False)
+    

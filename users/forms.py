@@ -49,8 +49,8 @@ class RegisterForm(FlaskForm):
         'volunteer', 'Volunteer')], validators=[DataRequired()])
     
     # Additional fields for volunteer
-    id_copy = FileField('Upload ID Copy', validators=[FileAllowed(['pdf'], 'Please upload PDF only.'), FileSize(max_size=2000000, message='ID copy size should not greater than 2MB.'), DataRequired()])
-    certificates = FileField('Upload Certificates', validators=[FileAllowed(['pdf'], 'Please upload PDF only.'), FileSize(max_size=2000000, message='Certificates size should not greater than 2MB.'), DataRequired()])
+    id_copy = FileField('Upload ID Copy', validators=[FileAllowed(['pdf'], message='Please upload PDF only.'), FileSize(max_size=2000000, message='ID copy size should not greater than 2MB.'), DataRequired()])
+    certificates = FileField('Upload Certificates', validators=[FileAllowed(['pdf'], message='Please upload PDF only.'), FileSize(max_size=2000000, message='Certificates size should not greater than 2MB.'), DataRequired()])
     
     password = PasswordField('Password',
                              validators=[DataRequired(), Length(
@@ -183,3 +183,12 @@ class CreateSlotForm(FlaskForm):
     teams_link = StringField('Teams Meeting Link', validators=[URL(), InputRequired()], render_kw={"placeholder": "Enter Teams meeting link"})
     submit = SubmitField('Create Slot')
     
+class PostForm(FlaskForm):
+    title = StringField("Title",validators=[DataRequired(), Length(10, 100)])
+    content = TextAreaField('Content',validators=[DataRequired()])
+    # attachment = FileField('Attachment', validators=[FileAllowed(['jpg', 'jpeg', 'png', 'svg'])])
+    submit = SubmitField('Post')
+    
+class CommentForm(FlaskForm):
+    body = TextAreaField('Comment', validators=[DataRequired()])
+    submit = SubmitField('Submit Comment')

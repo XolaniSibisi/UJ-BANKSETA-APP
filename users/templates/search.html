@@ -124,4 +124,31 @@
     {% endif %}
 </div>
 </main>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<script>
+  $(document).ready(function() {
+    $('#search-input').autocomplete({
+      source: function(request, response) {
+        $.ajax({
+          url: '/search',
+          type: 'POST',
+          dataType: 'json',
+          data: {
+            searched: request.term
+          },
+          success: function(data) {
+            response($.map(data, function(item) {
+              return {
+                label: item.details.label,
+                value: item.details.value
+              };
+            }));
+          }
+        });
+      },
+      minLength: 3 // Minimum number of characters before autocomplete activates
+    });
+  });
+</script>
 {% endblock %}

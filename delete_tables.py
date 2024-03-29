@@ -2,7 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 from users.extensions import database as db
-from users.models import Content, Contact, User, Slots
+from users.models import Content, Contact, User, Slots, Comment, Post
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite3'
@@ -17,7 +17,8 @@ with app.app_context():
 
 with app.app_context():
     try:
-        db.session.query(Slots).delete()
+        db.session.query(Comment).delete()
+        db.session.query(Post).delete()
         db.session.commit()
         print("All content deleted successfully.")
     except Exception as e:

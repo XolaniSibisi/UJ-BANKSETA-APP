@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% from 'bootstrap5/form.html' import render_field %}
+{% from 'bootstrap5/utils.html' import render_messages %}
+{% block title %}Create Post{% endblock %}
+
+{% block body %}
+<div class="container mt-5" style="padding-top: 2.0rem;">
+    <h1 class="text-center">Create Post</h1>
+    <div class="row mt-4" style="justify-content: center;">
+        <div class="col-lg-9 mb-3">
+            <form method="POST" enctype="multipart/form-data">
+                {{ render_messages() }}
+                {{ form.csrf_token}}
+                {{ render_field(form.title, class="form-control form-control-lg", placeholder="Title") }}
+                {{ render_field(form.content, class="form-control form-control-lg", placeholder="Content") }}
+                {{ render_field(form.submit, class="btn btn-primary") }}
+                <button type="button" class="btn btn-dark" onclick="history.back()">Cancel</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Function to hide messages after a delay
+    function hideMessages() {
+        var messagesElements = document.querySelectorAll('.alert');
+        if (messagesElements) {
+            setTimeout(function () {
+                messagesElements.forEach(function (element) {
+                    element.style.display = 'none';
+                });
+            }, 3000);  // 5000 milliseconds (5 seconds)
+        }
+    }
+
+    // Call the function when the page loads
+    window.onload = hideMessages;
+</script>
+{% endblock %}
