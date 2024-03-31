@@ -19,6 +19,7 @@ from users.utils import (
 from datetime import datetime, timedelta
 import os
 from sqlalchemy.sql import func
+from sqlalchemy import UniqueConstraint
 
 class User(db.Model, UserMixin):
     """
@@ -325,7 +326,7 @@ class Post(db.Model):
 
     id = db.Column(db.Integer,primary_key=True)
     title = db.Column(db.String(100),nullable=False)
-    date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    date_posted = db.Column(db.DateTime, nullable=False, default=datetime.now())
     content = db.Column(db.Text,nullable=False)
     views = db.Column(db.Integer, default=0)
     user_id = db.Column(db.Integer,db.ForeignKey("user.id"),nullable=False)
@@ -350,14 +351,14 @@ class Comment(db.Model):
 
     __tablename__ = 'comment'
 
-    id = db.Column(db.Integer,primary_key=True)
-    date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    id = db.Column(db.Integer,primary_key=True, autoincrement=True)
+    date_posted = db.Column(db.DateTime, nullable=False, default=datetime.now())
     body = db.Column(db.Text,nullable=False)
     user_id = db.Column(db.Integer,db.ForeignKey("user.id"),nullable=False)
     post_id = db.Column(db.Integer,db.ForeignKey("post.id"),nullable=False)
     
     def __repr__(self):
-        return f"Comment('{self.body}', '{self.date_posted}')"
+        return f"Comment('{self.body}', '{self.date_posted}', '{self.post_id}')"
     
     def save(self):
         db.session.add(self)
@@ -368,8 +369,26 @@ class Comment(db.Model):
         db.session.commit()
 
 class Like(db.Model):
+    """
+    A Like model class.
+    """
+
+    __tablename__ = 'like'
+
     id = db.Column(db.Integer, primary_key=True)
     date_created = db.Column(db.DateTime(timezone=True), default=func.now())
     user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
     post_id = db.Column(db.Integer, db.ForeignKey("post.id", ondelete="CASCADE"), nullable=False)
+    
+    def __repr__(self):
+        return f"Like('{self.user_id}', '{self.post_id}')"
+    
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+        
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+        
     

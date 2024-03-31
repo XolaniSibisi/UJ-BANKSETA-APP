@@ -66,3 +66,15 @@ a{
 .font-weight-bold {
     font-weight: 700 !important;
 }
+.ion-ios-heart-outline {
+    color:  #999;;
+}
+.ion-ios-heart {
+    color: #FD0031;
+}
+.stats-block {
+    position: sticky;
+    bottom: 0;
+    z-index: 1000; /* Ensure it stays above other elements */
+  }
+  

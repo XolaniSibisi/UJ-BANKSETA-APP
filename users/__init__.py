@@ -2,6 +2,7 @@ import os
 from flask import Flask as FlaskAuth
 from pathlib import Path
 from dotenv import load_dotenv
+from .momentjs import momentjs
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -63,6 +64,8 @@ def config_application(app):
     app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
     app.config["UPLOAD_FOLDER_SUPPORTING_DOCUMENTS"] = UPLOAD_FOLDER_SUPPORTING_DOCUMENTS
     app.config["UPLOAD_FOLDER_LOCAL_FILES"] = UPLOAD_FOLDER_LOCAL_FILES
+    
+    app.jinja_env.globals['momentjs'] = momentjs
 
 
 def config_blueprint(app):

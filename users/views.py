@@ -7,6 +7,7 @@ from flask import send_from_directory
 from flask import current_app
 from sqlalchemy import or_, func, desc
 from collections import Counter
+from sqlalchemy.exc import IntegrityError
 import logging
 from flask_login import (
     current_user,
@@ -16,7 +17,7 @@ from flask_login import (
 )
 
 from users.extensions import database as db, csrf
-from users.models import User, Profile, Content, Contact, Slots, Post, Comment
+from users.models import User, Profile, Content, Contact, Slots, Post, Comment, Like
 from users.catalogues import maths_catalogue, physical_science_catalogue
 from users.forms import (
     RegisterForm,
@@ -530,22 +531,27 @@ def edit_profile():
 
     return render_template('edit_profile.html', form=form, profile=profile)
 
-
 @users.route('/forum', methods=['GET', 'POST'], strict_slashes=False)
 @login_required
 def forum():
     form = PostForm()
-    posts = Post.query.all()
     all_users_count = User.query.filter(User.role != 'admin').count()
     all_post = len(Post.query.all())
-    all_comments_count = db.session.query(Comment).count()
     new_member = User.query.order_by(desc(User.created_at)).distinct(User.username).first()
     all_topics_count = Post.query.with_entities(func.count(Post.title.distinct())).scalar()
     current_date = datetime.now()
     user = User.query.get_or_404(current_user.id)
-    page = request.args.get('page',1,type=int)
-    posts = Post.query.order_by(Post.date_posted.desc()).paginate(page=page,per_page=5)
-    return render_template('forum.html', posts=posts, form=form, current_date=current_date, format_time_difference=format_time_difference, all_users_count=all_users_count, all_post=all_post, all_topics_count=all_topics_count, new_member=new_member, all_comments_count=all_comments_count)
+
+    if request.method == 'POST':
+        # Handle search request
+        search_query = request.form.get('search_query', '')
+        posts = Post.query.filter(Post.title.ilike(f'%{search_query}%')).all()
+        return render_template('forum.html', posts=posts, form=form, current_date=current_date, format_time_difference=format_time_difference, all_users_count=all_users_count, all_post=all_post, all_topics_count=all_topics_count, new_member=new_member)
+    else:
+        # Regular page loading
+        page = request.args.get('page', 1, type=int)
+        posts = Post.query.order_by(Post.date_posted.desc()).paginate(page=page, per_page=5)
+        return render_template('forum.html', posts=posts, form=form, current_date=current_date, format_time_difference=format_time_difference, all_users_count=all_users_count, all_post=all_post, all_topics_count=all_topics_count, new_member=new_member)
 
 def format_time_difference(delta):
     if delta.days == 0:
@@ -662,24 +668,46 @@ def delete_comment(comment_id):
 
     return redirect(url_for('users.forum'))
 
+
 @users.route("/like-post/<post_id>", methods=['POST'])
 @login_required
-def like(post_id):
-    post = Post.query.filter_by(id=post_id).first()
-    like = Like.query.filter_by(
-        author=current_user.id, post_id=post_id).first()
+def like_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    like = Like.query.filter_by(user_id=current_user.id, post_id=post_id).first()
 
     if not post:
         return jsonify({'error': 'Post does not exist.'}, 400)
+
+    if like:
+        # User has already liked the post, so unlike it
+        db.session.delete(like)
+        db.session.commit()
+        return jsonify({'message': 'Post unliked successfully.', 'liked': False}), 200
+    else:
+        # User has not liked the post yet, so like it
+        like = Like(user_id=current_user.id, post_id=post_id)
+        db.session.add(like)
+        db.session.commit()
+        return jsonify({'message': 'Post liked successfully.', 'liked': True}), 200
+
+
+@users.route("/like-comment/<comment_id>", methods=['POST'])
+@login_required
+def like_comment(comment_id):
+    comment = Comment.query.filter_by(id=comment_id).first()
+    like = Like.query.filter_by(user_id=current_user.id, comment_id=comment_id).first()
+        
+    if not comment:
+        return jsonify({'error': 'Comment does not exist.'}, 400)
     elif like:
         db.session.delete(like)
         db.session.commit()
     else:
-        like = Like(author=current_user.id, post_id=post_id)
+        like = Like(user_id=current_user.id, comment_id=comment_id)
         db.session.add(like)
         db.session.commit()
 
-    return jsonify({"likes": len(post.likes), "liked": current_user.id in map(lambda x: x.author, post.likes)})
+    return jsonify({"likes": len(comment.likes), "liked": current_user.id in map(lambda x: x.user_id, comment.likes)})
 
 @users.route("/user/<string:username>",methods=['GET'])
 @login_required

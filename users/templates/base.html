@@ -81,9 +81,11 @@
             <form class="d-flex" method="POST" action="/search">
               {% if current_user.is_authenticated %}
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <input class="form-control me-2" type="search" placeholder="What are you looking for?" aria-label="Search"
+              <div class="input-group">
+              <input class="form-control" type="search" placeholder="What are you looking for?" aria-label="Search"
                 name="searched">
               <button class="btn btn-outline-light" type="submit">Search</button>
+              </div>
               {% endif %}
             </form>
           </div>
