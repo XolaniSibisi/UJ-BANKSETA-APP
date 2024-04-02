@@ -5,11 +5,9 @@
 
 
 {% block body %}
-<h1 class="mb-3 mt-5 text-center" style="padding-top: 1.5rem;">Posts by {{ user.username }} ({{ posts.total }}) Posts
-</h1>
-{% for post in posts.items %}
+<h1 class="mb-3 mt-5 text-center" style="padding-top: 1.5rem;">Posts by {{ user.username }} ({{ posts.total }}) Posts</h1>
 <article class="container content-section">
-  <div class="row justify-content-center"> <!-- Center the column -->
+  <div class="row justify-content-center">
     <div class="col-md-4 mt-3">
       <div class="d-flex justify-content-center">
         {% if author_profile and author_profile.avatar %}
@@ -22,6 +20,7 @@
       </div>
     </div>
   </div>
+  {% for post in posts.items %}
   <div class="media-body">
     <div class="article-metadata">
       <a class="mr-2" href="{{ url_for('users.user_posts', username=post.author.username) }}">{{ post.author.username

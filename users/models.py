@@ -329,6 +329,7 @@ class Post(db.Model):
     date_posted = db.Column(db.DateTime, nullable=False, default=datetime.now())
     content = db.Column(db.Text,nullable=False)
     views = db.Column(db.Integer, default=0)
+    attachment = db.Column(db.String(250), default='')
     user_id = db.Column(db.Integer,db.ForeignKey("user.id"),nullable=False)
     comments = db.relationship("Comment", backref="post", passive_deletes=True, lazy=True)
     likes = db.relationship("Like", backref="post", passive_deletes=True, lazy=True)

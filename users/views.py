@@ -537,22 +537,64 @@ def forum():
     form = PostForm()
     all_users_count = User.query.filter(User.role != 'admin').count()
     all_post = len(Post.query.all())
+    cutoff_date = datetime.utcnow() - timedelta(days=2)
     new_member = User.query.order_by(desc(User.created_at)).distinct(User.username).first()
     all_topics_count = Post.query.with_entities(func.count(Post.title.distinct())).scalar()
     current_date = datetime.now()
     user = User.query.get_or_404(current_user.id)
+    
+    # Query for posts with recent comments
+    active_topics = Post.query \
+        .join(Comment, Comment.post_id == Post.id) \
+        .filter(Comment.date_posted >= cutoff_date) \
+        .distinct() \
+        .all()
 
     if request.method == 'POST':
-        # Handle search request
-        search_query = request.form.get('search_query', '')
-        posts = Post.query.filter(Post.title.ilike(f'%{search_query}%')).all()
-        return render_template('forum.html', posts=posts, form=form, current_date=current_date, format_time_difference=format_time_difference, all_users_count=all_users_count, all_post=all_post, all_topics_count=all_topics_count, new_member=new_member)
+        # Perform search
+        search_query = request.form.get('search_query')
+        if search_query:
+            posts = Post.query.filter(Post.title.ilike(f'%{search_query}%') | Post.content.ilike(f'%{search_query}%')).order_by(Post.date_posted.desc()).all()
+        else:
+            posts = []
     else:
         # Regular page loading
         page = request.args.get('page', 1, type=int)
         posts = Post.query.order_by(Post.date_posted.desc()).paginate(page=page, per_page=5)
-        return render_template('forum.html', posts=posts, form=form, current_date=current_date, format_time_difference=format_time_difference, all_users_count=all_users_count, all_post=all_post, all_topics_count=all_topics_count, new_member=new_member)
 
+    return render_template('forum.html', posts=posts, form=form, current_date=current_date, format_time_difference=format_time_difference, all_users_count=all_users_count, all_post=all_post, all_topics_count=all_topics_count, new_member=new_member, active_topics=active_topics)
+
+@users.route('/search_forum', methods=['GET', 'POST'], strict_slashes=False)
+@login_required
+def search_forum():
+    form = PostForm()
+    all_users_count = User.query.filter(User.role != 'admin').count()
+    all_post = len(Post.query.all())
+    cutoff_date = datetime.utcnow() - timedelta(days=2)
+    new_member = User.query.order_by(desc(User.created_at)).distinct(User.username).first()
+    all_topics_count = Post.query.with_entities(func.count(Post.title.distinct())).scalar()
+    current_date = datetime.now()
+    user = User.query.get_or_404(current_user.id)
+    
+    # Query for posts with recent comments
+    active_topics = Post.query \
+        .join(Comment, Comment.post_id == Post.id) \
+        .filter(Comment.date_posted >= cutoff_date) \
+        .distinct() \
+        .all()
+    
+    if request.method == 'POST':
+        search_query = request.form.get('search_query')
+        if search_query:
+            # Query for search results
+            posts = Post.query.filter(Post.title.ilike(f'%{search_query}%') | Post.content.ilike(f'%{search_query}%')).order_by(Post.date_posted.desc()).paginate(page=1, per_page=5)
+            return render_template('forum.html', posts=posts, form=form, current_date=current_date, format_time_difference=format_time_difference, all_users_count=all_users_count, all_post=all_post, all_topics_count=all_topics_count, new_member=new_member, active_topics=active_topics)
+
+    # If no search query provided or no search results, render forum template with regular pagination
+    page = request.args.get('page', 1, type=int)
+    posts = Post.query.order_by(Post.date_posted.desc()).paginate(page=page, per_page=5)
+    return render_template('forum.html', posts=posts, form=form, current_date=current_date, format_time_difference=format_time_difference, all_users_count=all_users_count, all_post=all_post, all_topics_count=all_topics_count, new_member=new_member, active_topics=active_topics)
+    
 def format_time_difference(delta):
     if delta.days == 0:
         seconds = delta.seconds
@@ -572,7 +614,15 @@ def format_time_difference(delta):
 def new_post():
     form = PostForm()
     if form.validate_on_submit():
-        post = Post(title=form.title.data,content=form.content.data,author=current_user)
+        
+        attachment_filename = None
+        if form.attachment.data:
+            attachment_filename = secure_filename(form.attachment.data.filename)
+            uploads_folder = current_app.config['UPLOAD_FOLDER_LOCAL_FILES']
+            attachment_path = os.path.join(uploads_folder, attachment_filename)
+            form.attachment.data.save(attachment_path)
+            
+        post = Post(title=form.title.data,content=form.content.data,author=current_user, attachment=attachment_filename)
         db.session.add(post)
         db.session.commit()
         
@@ -665,6 +715,7 @@ def delete_comment(comment_id):
     else:
         db.session.delete(comment)
         db.session.commit()
+        flash('Comment deleted successfully.', category='success')
 
     return redirect(url_for('users.forum'))
 

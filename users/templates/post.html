@@ -9,6 +9,7 @@
   <article class="media content-section mt-2">
     <div class="container media-body">
       <div class="article-metadata">
+        {{ render_messages() }}
         <h2 class="article-title">{{ post.title }}</h2>
         {% if post_profile and post_profile.avatar %}
         <img class="rounded-circle" style="width: 40px;height: 40px;"
@@ -83,6 +84,7 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
             <form action="{{url_for('users.delete_post',post_id=post.id)}}" method='POST'>
+              <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
               <input class="btn btn-danger" type="submit" value="Delete">
             </form>
           </div>

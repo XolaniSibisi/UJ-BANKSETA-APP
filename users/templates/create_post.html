@@ -10,15 +10,28 @@
         <div class="col-lg-9 mb-3">
             <form method="POST" enctype="multipart/form-data">
                 {{ render_messages() }}
-                {{ form.csrf_token}}
+                {{ form.csrf_token }}
                 {{ render_field(form.title, class="form-control form-control-lg", placeholder="Title") }}
-                {{ render_field(form.content, class="form-control form-control-lg", placeholder="Content") }}
-                {{ render_field(form.submit, class="btn btn-primary") }}
-                <button type="button" class="btn btn-dark" onclick="history.back()">Cancel</button>
-            </form>
+                <div class="position-relative">
+                    {{ form.content(id="content", class="form-control form-control-lg", placeholder="Type your question here", rows="4") }}
+                    <label class="btn btn-outline-secondary btn-sm rounded-circle position-absolute bottom-0 start-0 m-2">
+                        <input type="file" style="display: none;" id="attachmentInput" onchange="updateContentField(this)">
+                        +
+                    </label>
+                </div>
+                {{ render_field(form.submit, class="btn btn-primary mt-2") }}
+                <button type="button" class="btn btn-dark mt-2" onclick="history.back()">Cancel</button>
+            </form>                                             
         </div>
     </div>
 </div>
+<script>
+    function updateContentField(input) {
+        var fileName = input.files[0].name;
+        var contentField = document.getElementById('content');
+        contentField.value += '\n' + 'Attachment: ' + fileName;
+    }
+</script>
 
 <script>
     // Function to hide messages after a delay

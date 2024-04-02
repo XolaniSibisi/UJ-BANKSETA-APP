@@ -7,6 +7,7 @@
   <h1 class="text-center mt-5" style="padding-top: 1.5rem;">Welcome to the Forum</h1>
   <div class="row mt-4">
     <!-- Main content -->
+    {{ render_messages() }}
     <div class="col-lg-9 mb-2">
       <div class="row text-left mb-1">
         <div class="col-lg-6 text-lg-right">
@@ -61,24 +62,29 @@
       <div class="text-center">
         <nav aria-label="Page navigation example">
           <ul class="pagination justify-content-center">
-            <li class="page-item disabled"> <a class="page-link" href="#" tabindex="-1"
-                aria-disabled="true">Previous</a> </li>
-            <li class="page-item"><a class="page-link" href="#">1</a></li>
-            <li class="page-item"><a class="page-link" href="#">2</a></li>
-            <li class="page-item"><a class="page-link" href="#">3</a></li>
-            <li class="page-item"> <a class="page-link" href="#">Next</a> </li>
+            <li class="page-item {% if not posts.has_prev %} disabled {% endif %}">
+              <a class="page-link" href="{{ url_for('users.forum', page=posts.prev_num) }}" tabindex="-1" aria-disabled="true">Previous</a>
+            </li>
+            {% for page_num in posts.iter_pages() %}
+            <li class="page-item {% if page_num == posts.page %} active {% endif %}">
+              <a class="page-link" href="{{ url_for('users.forum', page=page_num) }}">{{ page_num }}</a>
+            </li>
+            {% endfor %}
+            <li class="page-item {% if not posts.has_next %} disabled {% endif %}">
+              <a class="page-link" href="{{ url_for('users.forum', page=posts.next_num) }}">Next</a>
+            </li>
           </ul>
         </nav>
-      </div>
+      </div>      
     </div>
     <!-- Sidebar content -->
     <div class="col-lg-3">
       <div class="sticky-top mt-0">
         <div class="text-center mb-3">
-          <form method="POST" action="{{ url_for('users.forum') }}">
+          <form method="POST" action="{{ url_for('users.search_forum') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="input-group">
-              <input type="text" name="search_query"
+            <div class="input-group add-on">
+              <input type="text" name="search_query" id="search_query"
                 class="form-control form-control-lg bg-white bg-op-9 ml-auto text-sm w-lg-50"
                 placeholder="Search by title">
               <button type="submit" class="btn btn-primary">Search</button>
@@ -88,16 +94,13 @@
         <div class="bg-white mb-3" style="font-size: 10px;">
           <h4 class="px-3 py-2 op-5 m-0 text-center">Active Topics</h4>
           <hr class="m-0">
-          {% for post in posts.items %}
-          <h5 style="font-size: 15px;">
-            <a class="article-title" href="{{url_for('users.post',post_id=post.id)}}"
-              onclick="incrementViewCount({{post.id}})">{{ post.title }}</a>
-          </h5>
-          <p class="text-sm"><span class="op-6">Posted</span> {{ format_time_difference(current_date - post.date_posted)
-            }} <span class="op-6">by</span> <a class="text-black"
-              href="{{url_for('users.user_posts',username=post.author.username)}}">{{ post.author.username }}</a></p>
+          {% for post in active_topics %}
+              <h5 style="font-size: 15px;">
+                  <a class="article-title" href="{{ url_for('users.post', post_id=post.id) }}" onclick="incrementViewCount({{ post.id }})">{{ post.title }}</a>
+              </h5>
+              <p class="text-sm"><span class="op-6">Posted</span> {{ format_time_difference(current_date - post.date_posted) }} <span class="op-6">by</span> <a class="text-black" href="{{ url_for('users.user_posts', username=post.author.username) }}">{{ post.author.username }}</a></p>
           {% endfor %}
-        </div>
+      </div>      
         <div class="bg-white text-sm sticky-top stats-block">
           <h4 class="px-3 py-1 op-5 m-0 roboto-bold text-center">Stats</h4>
           <hr class="my-0">
@@ -119,6 +122,7 @@
   </div>
 </div>
 <br><br><br>
+
 <script>
   async function like(postId) {
     await fetch(`/like-post/${postId}`, {
