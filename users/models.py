@@ -391,5 +391,22 @@ class Like(db.Model):
     def delete(self):
         db.session.delete(self)
         db.session.commit()
-        
-    
+
+class Notification(db.Model):
+    """
+    A Notification model class.
+    """
+
+    __tablename__ = 'notification'
+
+    id = db.Column(db.String(38), primary_key=True, default=unique_uid, unique=True, nullable=False)
+    recipient_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+    notification_type = db.Column(db.String(20), nullable=False)  # 'like' or 'comment'
+    read = db.Column(db.Boolean, default=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    recipient = db.relationship('User', foreign_keys=[recipient_id])
+    sender = db.relationship('User', foreign_keys=[sender_id])
+    post = db.relationship('Post')

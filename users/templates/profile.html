@@ -17,12 +17,17 @@
                 <div class="col-md-4 mt-5">
                     <div class="d-flex justify-content-center">
                         {% if profile and profile.avatar %}
-                        <img class="rounded-circle mt-5 mb-3" style="object-fit: cover;width: 180px;height: 180px;"
-                            src="{{ url_for('static', filename='assets/profile/'+profile.avatar) }}">
+                        <div style="position: relative; display: inline-block;">
+                            <img class="rounded-circle mt-5 mb-3" style="object-fit: cover;width: 180px;height: 180px;"
+                                src="{{ url_for('static', filename='assets/profile/'+profile.avatar) }}">
+                                <span class="badge rounded-circle text-bg-danger" style="position: relative; top: 90px; right: 50px;">{{ get_notification_count(current_user.id) }}</span>
+                        </div>                        
                         {% else %}
-                        <img src="{{ url_for('static', filename='assets/images/default_avator.jpg') }}"
-                            alt="profile image" class="rounded-circle mt-5 mb-3"
-                            style="object-fit: cover;width: 200px;height: 200px;" />
+                        <div style="position: relative; display: inline-block;">
+                            <img class="rounded-circle mt-5 mb-3" style="object-fit: cover;width: 180px;height: 180px;"
+                                src="{{ url_for('static', filename='assets/images/default_avator.jpg') }}">
+                                <span class="badge rounded-circle text-bg-danger" style="position: relative; top: 90px; right: 50px;">4</span>
+                        </div>
                         {% endif %}
                     </div>
                 </div>

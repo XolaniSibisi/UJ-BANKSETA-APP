@@ -17,7 +17,7 @@ from flask_login import (
 )
 
 from users.extensions import database as db, csrf
-from users.models import User, Profile, Content, Contact, Slots, Post, Comment, Like
+from users.models import User, Profile, Content, Contact, Slots, Post, Comment, Like, Notification
 from users.catalogues import maths_catalogue, physical_science_catalogue
 from users.forms import (
     RegisterForm,
@@ -391,7 +391,7 @@ def profile():
 
         return redirect(url_for('users.edit_profile'))
 
-    return render_template('profile.html', form=form, profile=profile, taken_teaching_slots=taken_teaching_slots, taken_attending_slots=taken_attending_slots)
+    return render_template('profile.html', form=form, profile=profile, taken_teaching_slots=taken_teaching_slots, taken_attending_slots=taken_attending_slots, get_notification_count=get_notification_count)
 
 
 @users.route('/admin/profile', methods=['GET'])
@@ -543,6 +543,8 @@ def forum():
     current_date = datetime.now()
     user = User.query.get_or_404(current_user.id)
     
+    mark_notifications_as_read(current_user.id)
+    
     # Query for posts with recent comments
     active_topics = Post.query \
         .join(Comment, Comment.post_id == Post.id) \
@@ -564,6 +566,13 @@ def forum():
 
     return render_template('forum.html', posts=posts, form=form, current_date=current_date, format_time_difference=format_time_difference, all_users_count=all_users_count, all_post=all_post, all_topics_count=all_topics_count, new_member=new_member, active_topics=active_topics)
 
+# Function to mark notifications as read
+def mark_notifications_as_read(user_id):
+    notifications = Notification.query.filter_by(recipient_id=user_id, read=False).all()
+    for notification in notifications:
+        notification.read = True
+    db.session.commit()
+    
 @users.route('/search_forum', methods=['GET', 'POST'], strict_slashes=False)
 @login_required
 def search_forum():
@@ -630,7 +639,6 @@ def new_post():
         return redirect(url_for('users.forum'))
     return render_template('create_post.html',title="Create Post",form=form,legend='Update Post')
 
-
 @users.route("/post/<int:post_id>", methods=['GET', 'POST'])
 @login_required
 def post(post_id):
@@ -654,9 +662,17 @@ def post(post_id):
         comment = Comment(body=form.body.data, author=current_user, user_id=current_user.id, post_id=post_id)
         db.session.add(comment)
         db.session.commit()
+        # Create notification for the post author
+        notification = Notification(recipient_id=post.author.id, sender_id=current_user.id, post_id=post_id, notification_type='comment')
+        db.session.add(notification)
+        db.session.commit()
         return redirect(url_for('users.post', post_id=post_id))
     
     return render_template('post.html', title=post.title, post=post, current_date=current_date, format_time_difference=format_time_difference, form=form, comments=comments, comment_profiles=comment_profiles, post_profile=post_profile, all_comments_count=all_comments_count, date_posted=date_posted)
+
+def get_notification_count(user_id):
+    return Notification.query.filter_by(recipient_id=user_id, read=False).count()
+
 
 @users.route("/increment_view_count/<int:post_id>", methods=['POST'])
 @login_required
@@ -703,22 +719,35 @@ def delete_post(post_id):
     flash("Your post has been deleted ", 'success')
     return redirect(url_for('users.forum'))
 
-@users.route("/delete-comment/<comment_id>")
+@users.route("/delete_comment/<int:comment_id>/update", methods=['POST'])
 @login_required
 def delete_comment(comment_id):
-    comment = Comment.query.filter_by(id=comment_id).first()
+    comment = Comment.query.get_or_404(comment_id)
+    if comment.author != current_user:
+        abort(403)
+    db.session.delete(comment)
+    db.session.commit()
+    flash("Your comment has been deleted", 'success')
+    return redirect(url_for('users.post'))
 
-    if not comment:
-        flash('Comment does not exist.', category='error')
-    elif current_user.id != comment.author and current_user.id != comment.post.author:
-        flash('You do not have permission to delete this comment.', category='error')
-    else:
-        db.session.delete(comment)
+@users.route('/update_comment/<int:comment_id>/update', methods=['POST', 'GET'])
+@login_required
+def update_comment(comment_id):
+    comment = Comment.query.get_or_404(comment_id)
+    form = CommentForm()
+    
+    if comment.author != current_user:
+        abort(403)
+    
+    if form.validate_on_submit():
+        comment.body = form.body.data
         db.session.commit()
-        flash('Comment deleted successfully.', category='success')
-
-    return redirect(url_for('users.forum'))
-
+        flash('Your comment has been updated.', 'success')
+        return redirect(url_for('users.post', comment_id=comment.id))
+    elif request.method == 'GET':
+        form.body.data = comment.body
+    
+    return render_template('update_comment.html', form=form, comment=comment)
 
 @users.route("/like-post/<post_id>", methods=['POST'])
 @login_required
@@ -733,13 +762,22 @@ def like_post(post_id):
         # User has already liked the post, so unlike it
         db.session.delete(like)
         db.session.commit()
-        return jsonify({'message': 'Post unliked successfully.', 'liked': False}), 200
+        # Delete existing notification if it exists
+        notification = Notification.query.filter_by(recipient_id=post.author.id, sender_id=current_user.id, post_id=post_id, notification_type='like').first()
+        if notification:
+            db.session.delete(notification)
+            db.session.commit()
     else:
         # User has not liked the post yet, so like it
         like = Like(user_id=current_user.id, post_id=post_id)
         db.session.add(like)
         db.session.commit()
-        return jsonify({'message': 'Post liked successfully.', 'liked': True}), 200
+        # Create notification for the post author
+        notification = Notification(recipient_id=post.author.id, sender_id=current_user.id, post_id=post_id, notification_type='like')
+        db.session.add(notification)
+        db.session.commit()
+
+    return redirect(request.referrer)
 
 
 @users.route("/like-comment/<comment_id>", methods=['POST'])
