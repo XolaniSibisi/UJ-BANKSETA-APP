@@ -662,6 +662,7 @@ def post(post_id):
         comment = Comment(body=form.body.data, author=current_user, user_id=current_user.id, post_id=post_id)
         db.session.add(comment)
         db.session.commit()
+        flash('Your comment has been posted.', 'success')
         # Create notification for the post author
         notification = Notification(recipient_id=post.author.id, sender_id=current_user.id, post_id=post_id, notification_type='comment')
         db.session.add(notification)
@@ -719,35 +720,45 @@ def delete_post(post_id):
     flash("Your post has been deleted ", 'success')
     return redirect(url_for('users.forum'))
 
-@users.route("/delete_comment/<int:comment_id>/update", methods=['POST'])
+@users.route("/delete/<int:comment_id>", methods=['POST'])
 @login_required
 def delete_comment(comment_id):
     comment = Comment.query.get_or_404(comment_id)
+    post_id = comment.post_id
     if comment.author != current_user:
         abort(403)
     db.session.delete(comment)
     db.session.commit()
     flash("Your comment has been deleted", 'success')
-    return redirect(url_for('users.post'))
+    return redirect(url_for('users.post', post_id=post_id))
 
 @users.route('/update_comment/<int:comment_id>/update', methods=['POST', 'GET'])
 @login_required
 def update_comment(comment_id):
     comment = Comment.query.get_or_404(comment_id)
+    current_date = datetime.now()
+    comments = Comment.query.filter_by(post_id=comment.post_id).all()
+    updated_at = comment.updated_at.strftime('%H:%M:%S')
     form = CommentForm()
     
     if comment.author != current_user:
         abort(403)
+        
+    # Retrieve profile information for each comment author
+    comment_profiles = {}
+    for comment in comments:
+        profile = Profile.query.filter_by(user_id=comment.author.id).first_or_404()
+        comment_profiles[comment.id] = profile
     
     if form.validate_on_submit():
         comment.body = form.body.data
         db.session.commit()
         flash('Your comment has been updated.', 'success')
-        return redirect(url_for('users.post', comment_id=comment.id))
+        return redirect(url_for('users.post', post_id=comment.post_id))
     elif request.method == 'GET':
         form.body.data = comment.body
     
-    return render_template('update_comment.html', form=form, comment=comment)
+    return render_template('update_comment.html', form=form, comment=comment, current_date=current_date, format_time_difference=format_time_difference, comment_profiles=comment_profiles, updated_at=updated_at)
 
 @users.route("/like-post/<post_id>", methods=['POST'])
 @login_required

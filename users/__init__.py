@@ -141,3 +141,7 @@ def config_errorhandler(app):
     def database_error(e):
         flash("Internal server error.", 'error')
         return redirect(url_for('users.home'))
+    
+LANGUAGE = 'en-us'
+TIMEZONE = 'GMT+2'
+    

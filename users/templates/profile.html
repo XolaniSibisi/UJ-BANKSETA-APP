@@ -20,13 +20,13 @@
                         <div style="position: relative; display: inline-block;">
                             <img class="rounded-circle mt-5 mb-3" style="object-fit: cover;width: 180px;height: 180px;"
                                 src="{{ url_for('static', filename='assets/profile/'+profile.avatar) }}">
-                                <span class="badge rounded-circle text-bg-danger" style="position: relative; top: 90px; right: 50px;">{{ get_notification_count(current_user.id) }}</span>
+                                <span class="badge rounded-circle text-bg-danger" style="position: relative; top: 89px; right: 50px;">{{ get_notification_count(current_user.id) }}</span>
                         </div>                        
                         {% else %}
                         <div style="position: relative; display: inline-block;">
                             <img class="rounded-circle mt-5 mb-3" style="object-fit: cover;width: 180px;height: 180px;"
                                 src="{{ url_for('static', filename='assets/images/default_avator.jpg') }}">
-                                <span class="badge rounded-circle text-bg-danger" style="position: relative; top: 90px; right: 50px;">4</span>
+                                <span class="badge rounded-circle text-bg-danger" style="position: relative; top: 89px; right: 50px;">{{ get_notification_count(current_user.id) }}</span>
                         </div>
                         {% endif %}
                     </div>

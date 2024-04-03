@@ -354,6 +354,7 @@ class Comment(db.Model):
 
     id = db.Column(db.Integer,primary_key=True, autoincrement=True)
     date_posted = db.Column(db.DateTime, nullable=False, default=datetime.now())
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     body = db.Column(db.Text,nullable=False)
     user_id = db.Column(db.Integer,db.ForeignKey("user.id"),nullable=False)
     post_id = db.Column(db.Integer,db.ForeignKey("post.id"),nullable=False)
