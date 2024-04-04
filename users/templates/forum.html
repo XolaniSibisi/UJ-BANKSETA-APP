@@ -98,7 +98,7 @@
               <h5 style="font-size: 15px;">
                   <a class="article-title" href="{{ url_for('users.post', post_id=post.id) }}" onclick="incrementViewCount({{ post.id }})">{{ post.title }}</a>
               </h5>
-              <p class="text-sm"><span class="op-6">Posted</span> {{ format_time_difference(current_date - post.date_posted) }} <span class="op-6">by</span> <a class="text-black" href="{{ url_for('users.user_posts', username=post.author.username) }}">{{ post.author.username }}</a></p>
+              <p class="text-sm"><span class="op-6">Posted</span> {{ format_time_difference(current_date-post.date_posted) }} <span class="op-6">by</span> <a class="text-black" href="{{ url_for('users.user_posts', username=post.author.username) }}">{{ post.author.username }}</a></p>
           {% endfor %}
       </div>      
         <div class="bg-white text-sm sticky-top stats-block">

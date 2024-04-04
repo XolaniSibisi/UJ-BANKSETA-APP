@@ -8,6 +8,7 @@ from flask import current_app
 from sqlalchemy import or_, func, desc
 from collections import Counter
 from sqlalchemy.exc import IntegrityError
+import pytz
 import logging
 from flask_login import (
     current_user,
@@ -347,7 +348,8 @@ def confirm_email(token=None):
 @users.route('/', strict_slashes=False)
 @users.route('/home', strict_slashes=False)
 def home():
-    return render_template('home.html', profile=profile)
+    form = ContactForm()
+    return render_template('home.html', profile=profile, form=form)
 
 @users.route('/profile', methods=['GET', 'POST'], strict_slashes=False)
 @login_required
@@ -397,6 +399,7 @@ def profile():
 @users.route('/admin/profile', methods=['GET'])
 @login_required
 def admin_profile():
+    form = ContactForm()
     if current_user.role != 'admin':
         abort(403)  # Forbidden: Only admins can access this page
     
@@ -419,12 +422,13 @@ def admin_profile():
         volunteer_profiles[volunteer] = profile
 
     return render_template('admin_profile.html', students=students, volunteers=volunteers,
-                           student_profiles=student_profiles, volunteer_profiles=volunteer_profiles)
+                           student_profiles=student_profiles, volunteer_profiles=volunteer_profiles, form=form)
 
 
 @users.route('/view_user/<user_id>', methods=['GET'])
 @login_required
 def view_user(user_id):
+    form = ContactForm()
     user = User.query.get_or_404(user_id)
     profile = Profile.query.filter_by(user_id=user_id).first_or_404()
 
@@ -439,7 +443,7 @@ def view_user(user_id):
 
     return render_template('view_user.html', user=user, profile=profile,
                            taken_teaching_slots=taken_teaching_slots,
-                           taken_attending_slots=taken_attending_slots)
+                           taken_attending_slots=taken_attending_slots, form=form)
 
 
 
@@ -480,7 +484,8 @@ def contact():
 @users.route('/contact/success')
 @login_required
 def contact_success():
-    return render_template('contact_success.html')
+    form = ContactForm()
+    return render_template('contact_success.html', form=form)
 
 def send_email(name, email, subject, message):
     msg = Message(subject=f"New message from {name} via contact form",
@@ -647,7 +652,12 @@ def post(post_id):
     comments = Comment.query.filter_by(post_id=post_id).all()
     all_comments_count = db.session.query(Comment).count()
     current_date = datetime.now()
-    date_posted=post.date_posted.strftime('%m %d, %Y')
+    local_tz = pytz.timezone('Africa/Johannesburg')
+    localized_datetime = post.date_posted.astimezone(local_tz)
+    formatted_date_posted = localized_datetime.strftime('%m %d, %Y')
+
+    post.date_posted = formatted_date_posted
+    
     
     # Retrieve profile information for each comment author
     comment_profiles = {}
@@ -812,17 +822,19 @@ def like_comment(comment_id):
 @users.route("/user/<string:username>",methods=['GET'])
 @login_required
 def user_posts(username):
+    form = ContactForm()
     current_date = datetime.now()
     profile = Profile.query.filter_by(user_id=current_user.id).first_or_404()
     page = request.args.get('page',1,type=int)
     user= User.query.filter_by(username = username).first_or_404()
     author_profile = Profile.query.filter_by(user_id=user.id).first()
     posts = Post.query.filter_by(author = user).order_by(Post.date_posted.desc()).paginate(page=page,per_page=5)
-    return render_template('user_post.html',posts=posts,title=username+" Posts",user=user, current_date=current_date, format_time_difference=format_time_difference, author_profile=author_profile)
+    return render_template('user_post.html',posts=posts,title=username+" Posts",user=user, current_date=current_date, format_time_difference=format_time_difference, author_profile=author_profile, form=form)
 
 @users.route('/search', methods=['POST'], strict_slashes=False)
 @login_required
 def search():
+    form = ContactForm()
     search_query = request.form.get('searched')
     
     print("Search query:", search_query)
@@ -879,7 +891,7 @@ def search():
     search_results.extend(slots_results)
     
     # Render the template with the search results
-    return render_template('search.html', search_results=search_results)
+    return render_template('search.html', search_results=search_results, form=form)
 
 
 def preprocess_content_data(content_list):
@@ -898,6 +910,7 @@ def preprocess_content_data(content_list):
 @login_required
 def maths_content():
     # Fetch maths content from the database
+    form = ContactForm()
     maths_content = Content.query.filter_by(stem='maths').all()
 
     # Organize the content into a dictionary structure based on content_type and topic
@@ -910,15 +923,16 @@ def maths_content():
         content_data[content.content_type][content.topic].append(content)
 
     if not content_data:  # If content_data is empty or None
-        return render_template('no_content.html')
+        return render_template('no_content.html', form=form)
 
-    return render_template('maths_content.html', content_data=content_data)
+    return render_template('maths_content.html', content_data=content_data, form=form)
 
 
 @users.route('/science_content', methods=['GET'])
 @login_required
 def science_content():
     # Fetch science content from the database
+    form = ContactForm
     science_content = Content.query.filter_by(stem='science').all()
 
     # Organize the content into a dictionary structure based on content_type and topic
@@ -931,9 +945,9 @@ def science_content():
         content_data[content.content_type][content.topic].append(content)
 
     if not content_data:  # If content_data is empty or None
-        return render_template('no_content.html')
+        return render_template('no_content.html', form=form)
 
-    return render_template('science_content.html', content_data=content_data)
+    return render_template('science_content.html', content_data=content_data, form=form)
 
 def save_file_to_server(file):
     """
@@ -1050,6 +1064,7 @@ def serve_content_file(file_name):
 @users.route('/view_content/<content_id>')
 @login_required
 def view_content(content_id):
+    form = ContactForm
     # Fetch the content data from the database based on the content_id
     content = Content.query.get(content_id)
     if content:
@@ -1058,16 +1073,16 @@ def view_content(content_id):
             file_name = os.path.basename(content.link)
             # Construct the URL for serving the uploaded file
             file_url = url_for('users.serve_uploaded_file', filename=file_name)
-            return render_template('view_content.html', content=content, file_url=file_url)
+            return render_template('view_content.html', content=content, file_url=file_url, form=form)
         else:
             # Convert YouTube link to embed link
             content.embed_link = convert_to_embed_link(content.link)
             # Render the view_content.html template and pass the content data
-            return render_template('view_content.html', content=content)
+            return render_template('view_content.html', content=content, form=form)
     else:
         # If content is not found, redirect to a home page
         flash('Content not found', 'error')
-        return redirect(url_for('users.home'))
+        return redirect(url_for('users.home', form=form))
 
 @users.route('/uploads/<path:filename>', methods=['GET'])
 @login_required
@@ -1079,6 +1094,7 @@ def serve_uploaded_file(filename):
 @users.route('/download_content/<content_id>', methods=['GET'])
 @login_required
 def download_content(content_id):
+    form = ContactForm()
     # Retrieve the Content object based on the content_id
     content = Content.query.get_or_404(content_id)
     
@@ -1120,13 +1136,14 @@ def download_content(content_id):
             return send_file(temp_file.name, as_attachment=True, download_name=filename)
         else:
             flash('Failed to download content.', 'error')
-            return redirect(url_for('users.home'))
+            return redirect(url_for('users.home', form=form))
 
 
 # Admin dashboard route
 @users.route('/dashboard', methods=['GET'])
 @login_required
 def dashboard():
+    form = ContactForm()
     # Fetch all content from the database
     all_content = Content.query.all()
     
@@ -1140,7 +1157,7 @@ def dashboard():
     num_slots_taken = Slots.query.filter_by(status='taken').count()
 
     # Calculate slot attendance percentage
-    num_slots_attendance = Slots.query.filter(Slots.student_id.isnot(None)).count()/Slots.query.count()*100 if Slots.query.count() > 0 else 0
+    num_slots_attendance = round(Slots.query.filter(Slots.student_id.isnot(None)).count()/Slots.query.count()*100) if Slots.query.count() > 0 else 0
 
     # Get the latest registration date for students
     latest_student_registration = User.query.filter_by(role='student').order_by(User.created_at.desc()).first()
@@ -1183,7 +1200,7 @@ def dashboard():
 
     # Calculate the average
     if total_slots > 0:
-        average_taken_slots = taken_slots / total_slots
+        average_taken_slots = round(taken_slots / total_slots)
     else:
         average_taken_slots = 0
         
@@ -1191,16 +1208,17 @@ def dashboard():
     return render_template('dashboard.html', num_students=num_students, num_volunteers=num_volunteers,
                            last_student_registration_date=last_student_registration_date,
                            last_volunteer_registration_date=last_volunteer_registration_date, num_slots_taken=num_slots_taken, 
-                           num_slots_attendance=num_slots_attendance, all_content=all_content, average_taken_slots=average_taken_slots, most_popular_attended_subtopic=most_popular_attended_subtopic)
+                           num_slots_attendance=num_slots_attendance, all_content=all_content, average_taken_slots=average_taken_slots, most_popular_attended_subtopic=most_popular_attended_subtopic, form=form)
 
 # Route to edit content
 @users.route('/edit_content/<content_id>', methods=['GET'])
 @login_required
 def edit_content(content_id):
+    form = ContactForm()
     # Fetch the content by ID
     content = Content.query.get_or_404(content_id)
 
-    return render_template('edit_content.html', content=content)
+    return render_template('edit_content.html', content=content, form=form)
 
 @users.route('/edit_content', methods=['POST'])
 @login_required
@@ -1317,14 +1335,16 @@ def delete_slot(slot_id):
 @users.route('/edit_slot/<slot_id>', methods=['GET'], strict_slashes=False)
 @login_required
 def edit_slot(slot_id):
+    form = ContactForm()
     # Fetch the slot by ID
     slot = Slots.query.get_or_404(slot_id)
 
-    return render_template('edit_slot.html', slot=slot)
+    return render_template('edit_slot.html', slot=slot, form=form)
 
 @users.route('/edit_slot', methods=['POST'], strict_slashes=False)
 @login_required
 def update_slot():
+    form = ContactForm()
     # Fetch the slot by ID
     slot_id = request.form.get('slot_id')
     slot = Slots.query.get_or_404(slot_id)
@@ -1338,22 +1358,23 @@ def update_slot():
 
         # Extract time component from datetime strings and convert to time objects
         slot.date = datetime.strptime(request.form.get('date'), '%Y-%m-%d').date()
-        slot.start_time = datetime.strptime(request.form.get('start_time'), '%H:%M').time()
-        slot.end_time = datetime.strptime(request.form.get('end_time'), '%H:%M').time()
+        slot.start_time = datetime.strptime(request.form.get('start_time'), '%H:%M:%S').time()
+        slot.end_time = datetime.strptime(request.form.get('end_time'), '%H:%M:%S').time()
 
     # Save the updated slot
     db.session.commit()
 
     flash('Teaching slot updated successfully.', 'success')
-    return redirect(url_for('users.dashboard'))
+    return redirect(url_for('users.dashboard', form=form))
 
 
 @users.route('/live_classes', methods=['GET'], strict_slashes=False)
 @login_required
 def live_classes():
+    form = ContactForm()
     # Retrieve all slots
     slots = Slots.query.all()
-    return render_template('live_classes.html', slots=slots)
+    return render_template('live_classes.html', slots=slots, form=form)
 
 @users.route('/attend_event/<slot_id>', methods=['GET'], strict_slashes=False)
 @login_required
@@ -1391,26 +1412,27 @@ def attend_event(slot_id):
 @users.route('/take_slot/<slot_id>', methods=['GET'], strict_slashes=False)
 @login_required
 def take_slot(slot_id):
+    form = ContactForm
     slot = Slots.query.get(slot_id)
     if not slot:
         flash('Teaching slot not found.', 'error')
-        return redirect(url_for('users.dashboard'))
+        return redirect(url_for('users.dashboard', form=form))
 
     # Check if the current user is a volunteer
     if current_user.role != 'volunteer':
         flash('You are not authorized to take teaching slots.', 'error')
-        return redirect(url_for('users.live_classes'))
+        return redirect(url_for('users.live_classes', form=form))
 
     # Get the profile of the current user
     profile = Profile.query.filter_by(user_id=current_user.id).first()
     if not profile:
         flash('Profile not found.', 'error')
-        return redirect(url_for('users.live_classes'))
+        return redirect(url_for('users.live_classes', form=form))
     
     # Check if the slot is already taken
     if slot.status == 'taken':
         flash('This teaching slot has already been taken.', 'warning')
-        return redirect(url_for('users.profile'))
+        return redirect(url_for('users.profile', form=form))
 
     # Assign the slot to the current volunteer profile
     slot.volunteer_id = profile.id
@@ -1418,5 +1440,5 @@ def take_slot(slot_id):
     db.session.commit()
 
     flash('Teaching slot taken successfully.', 'success')
-    return redirect(url_for('users.profile'))
+    return redirect(url_for('users.profile', form=form))
 
