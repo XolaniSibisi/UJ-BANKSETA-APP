@@ -42,7 +42,6 @@
               {% else %}
               <i class="ion-ios-heart-outline icon-1x" id="like-button-{{post.id}}" onclick="like({{post.id}})"></i>
               {% endif %}
-              <span id="like-count-{{post.id}}" class="d-block text-sm">{{post.likes|length}}</span>
             </div>
             <div class="col px-1"> <i class="ion-ios-chatboxes-outline icon-1x"></i> <span class="d-block text-sm">{{
                 post.comments|length }}</span> </div>

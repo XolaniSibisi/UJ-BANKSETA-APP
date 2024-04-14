@@ -9,6 +9,8 @@ migrations/
 venv/
 env/
 profile/
+local_files/
+supporting_documents/
 
 *.db
 *.sqlite3

@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% from 'bootstrap5/form.html' import render_field %}
+{% from 'bootstrap5/utils.html' import render_messages %}
+{% block title %}Verification{% endblock %}
+
+{% block body %}
+<div class="container">
+    <h1 class="text-center mt-5" style="padding-top: 2.0rem;">Verification</h1>
+    <div class="row justify-content-center mt-4">
+        {{ render_messages() }}
+        <div class="col-lg-8">
+                <h2 class="mb-4">List of Volunteers to Verify</h2>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Documents</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for volunteer in volunteers %}
+                            <tr>
+                                <td>{{ volunteer.username }}</td>
+                                <td>{{ volunteer.email }}</td>
+                                <td>{{ volunteer.role }}</td>
+                                <td>
+                                    {% if volunteer.id_copy_filename %}
+                                    <a href="{{ url_for('static', filename='assets/supporting_documents/' ~ volunteer.id_copy_filename) }}" target="_blank">ID Copy</a><br>
+                                    {% endif %}
+                                    {% if volunteer.certificates_filename %}
+                                    <a href="{{ url_for('static', filename='assets/supporting_documents/' ~ volunteer.certificates_filename) }}" target="_blank">Certificates</a><br>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <form method="post" action="{{ url_for('users.verification') }}" style="display: inline;">
+                                        <input type="hidden" name="volunteer_id" value="{{ volunteer.id }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" name="action" value="verify" class="btn btn-primary">Verify</button>
+                                    </form>
+                                    <form method="post" action="{{ url_for('users.rejection') }}" style="display: inline;">
+                                        <input type="hidden" name="volunteer_id" value="{{ volunteer.id }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" name="action" value="reject" class="btn btn-danger">Reject</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>                
+        </div>
+    </div>
+</div>
+<br><br><br><br>
+
+<script>
+    function hideMessages() {
+        var messagesElements = document.querySelectorAll('.alert');
+        messagesElements.forEach(function (element) {
+            setTimeout(function () {
+                element.style.display = 'none';
+            }, 3000);
+        });
+    }
+    window.onload = hideMessages;
+
+</script>
+{% endblock %}

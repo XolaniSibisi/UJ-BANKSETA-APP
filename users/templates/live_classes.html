@@ -38,11 +38,11 @@
                             {% endif %}
                             {% if current_user.role == 'admin' %}
                                 <div style="display: flex; justify-content: center;">
-                                    <a href="{{ url_for('users.edit_slot', slot_id=slot.id) }}" class="btn btn-primary" style="margin-right: 5px;">Edit</a>
+                                    <a href="{{ url_for('users.edit_slot', slot_id=slot.id) }}" class="btn btn-primary" style="margin-right: 5px;"><i class="fa fa-edit"></i></a>
                                     <form action="{{ url_for('users.delete_slot', slot_id=slot.id) }}" method="post" style="margin-left: 5px; display: inline;">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <input type="hidden" name="slot_id" value="{{ slot.id }}">
-                                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this slot?')">Delete</button>
+                                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this slot?')"><i class="fa fa-trash"></i></button>
                                     </form>
                                 </div>
                             {% endif %}

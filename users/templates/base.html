@@ -63,19 +63,15 @@
           {% if current_user.is_authenticated %}
           {% if current_user.is_admin() %}
           {{ render_nav_item('users.dashboard', 'Dashboard') }}
-          {{ render_nav_item('users.live_classes', 'Live Classes') }}
+          {{ render_nav_item('users.papers', 'Past Papers') }}
           {{ render_nav_item('users.admin_profile', 'User Management') }}
+          {{ render_nav_item('users.verification', 'Verify Users')}}
           {% elif current_user.is_student() %}
-          {{ render_nav_item('users.maths_content', 'Maths') }}
-          {{ render_nav_item('users.science_content', 'Science') }}
-          {{ render_nav_item('users.live_classes', 'Live Classes') }}
           {{ render_nav_item('users.contact', 'Contact Us') }}
           {{ render_nav_item('users.profile', 'Profile') }}
           {% elif current_user.is_volunteer() %}
-          {{ render_nav_item('users.live_classes', 'Live Classes') }}
           {{ render_nav_item('users.profile', 'Profile') }}
           {% endif %}
-          {{ render_nav_item('users.forum', 'Forum') }}
           {% endif %}
         </ul>
         <ul class="navbar-nav ms-auto my-2 mb-lg-0">

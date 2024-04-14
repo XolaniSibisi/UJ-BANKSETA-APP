@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% from 'bootstrap5/utils.html' import render_messages %}
+{% from 'bootstrap5/form.html' import render_field %}
+{% block title %}Upload Past Paper{% endblock %}
+
+{% block body %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h1 class="mt-5 text-center" style="padding-top: 2.0rem;">Upload Past Paper</h1>
+            <form method="POST" action="{{ url_for('users.papers') }}" class="mt-4">
+                {{ form.hidden_tag() }}
+                {{ form.csrf_token() }}
+                {{ render_messages() }}
+                {{ render_field(form.stem, class="form-select", label="Choose your stem") }}
+                {{ render_field(form.title, placeholder="Enter the title of the paper") }}
+                {{ render_field(form.paper_type, class="form-select", label="Choose the type of paper") }}
+                {{ render_field(form.link, placeholder="Paste the link to the paper") }}
+                {{ render_field(form.year_written, class="form-control mb-3")}}
+                <div class="row justify-content-center">
+                    <div class="col-auto">
+                        {{ render_field(form.submit, class="btn btn-primary", value="Upload")}}
+                    </div>
+                    <div class="col-auto">
+                        <a href="{{ url_for('users.home') }}" class="btn btn-dark">Cancel</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<br><br>
+<script>
+    function hideMessages() {
+        var messagesElements = document.querySelectorAll('.alert');
+        messagesElements.forEach(function (element) {
+            setTimeout(function () {
+                element.style.display = 'none';
+            }, 3000);
+        });
+    }
+    window.onload = hideMessages;
+
+</script>
+{% endblock %}

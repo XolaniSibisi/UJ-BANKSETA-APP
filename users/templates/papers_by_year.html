@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Papers by Year{% endblock %}
+
+{% block body %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="mt-5 text-center" style="padding-top: 2.0rem;">Papers by Year</h1>
+            <div class="row">
+                <div class="col-md-12">
+                    {% set papers_by_year = {} %}
+                    {% for paper in papers %}
+                        {% set year = paper.year_written %}
+                        {% if year not in papers_by_year %}
+                            {% set _ = papers_by_year.update({year: [paper]}) %}
+                        {% else %}
+                            {% set _ = papers_by_year[year].append(paper) %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% for year, papers_in_year in papers_by_year.items() %}
+                    <h2>{{ year }}</h2>
+                    <ul>
+                        {% for paper in papers_in_year %}
+                        <li><a href="{{ paper.link }}" download target="_blank">{{ paper.title }} ({{ paper.year_written }})</a></li>
+                        {% endfor %}
+                    </ul>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+{% endblock %}

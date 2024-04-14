@@ -14,7 +14,8 @@
     "axe/structure": [
       "default",
       {
-        "list": "off"
+        "list": "off",
+        "listitem": "off"
       }
     ],
     "meta-viewport": "off",
@@ -42,6 +43,7 @@
       }
     ],
     "button-type": "off",
-    "apple-touch-icons": "off"
+    "apple-touch-icons": "off",
+    "disown-opener": "off"
   }
 }

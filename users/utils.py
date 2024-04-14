@@ -80,3 +80,33 @@ def send_notification_email(users, subject, body):
                       recipients=[user.email])
         msg.body = body
         mail.send(msg)
+        
+def send_volunteer_thank_you_email(email):
+    try:
+        sender = os.environ.get('MAIL_USERNAME', None)
+        msg = Message('Thank You for Registering as a Volunteer', sender=sender, recipients=[email])
+        msg.body = render_template('volunteer_thank_you_email.txt')
+        mail.send(msg)
+        print('Volunteer thank you email sent successfully.')  # Debugging statement
+    except Exception as e:
+        print(f'Error sending volunteer thank you email: {str(e)}')  # Debugging statement
+
+def send_application_accepted_email(email):
+    try:
+        sender = os.environ.get('MAIL_USERNAME', None)
+        msg = Message('Application Accepted', sender=sender, recipients=[email])
+        msg.body = render_template('application_accepted_email.txt')
+        mail.send(msg)
+        print('Application accepted email sent successfully.')  # Debugging statement
+    except Exception as e:
+        print(f'Error sending application accepted email: {str(e)}')
+
+def send_application_rejected_email(email):
+    try:
+        sender = os.environ.get('MAIL_USERNAME', None)
+        msg = Message('Application Rejected', sender=sender, recipients=[email])
+        msg.body = render_template('application_rejected_email.txt')
+        mail.send(msg)
+        print('Application rejected email sent successfully.')  # Debugging statement
+    except Exception as e:
+        print(f'Error sending application rejected email: {str(e)}')  # Debugging statement

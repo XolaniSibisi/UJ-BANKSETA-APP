@@ -411,3 +411,31 @@ class Notification(db.Model):
     recipient = db.relationship('User', foreign_keys=[recipient_id])
     sender = db.relationship('User', foreign_keys=[sender_id])
     post = db.relationship('Post')
+    
+class Papers(db.Model):
+    """
+    A Papers model class.
+    """
+
+    __tablename__ = 'papers'
+
+    id = db.Column(db.String(38), primary_key=True, default=unique_uid, unique=True, nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    link = db.Column(db.String(250), nullable=False)
+    stem = db.Column(db.String(250))
+    paper_type = db.Column(db.String(50), nullable=False)
+    year_written = db.Column(db.String, nullable=False)
+
+    user_id = db.Column(db.String(38), db.ForeignKey('user.id', ondelete="CASCADE"), nullable=False)
+
+    def __repr__(self):
+        return f"Papers(title={self.title}, paper_type={self.paper_type}, link={self.link}, stem={self.stem}, year_written={self.year_written})"
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+        
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+        

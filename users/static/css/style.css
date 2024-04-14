@@ -99,4 +99,68 @@ a{
 .nav-item a.nav-link.link-dark:hover svg {
     transform: scale(1.2);
 }
-  
+.page_404{ padding:40px 0; background:#fff; font-family: 'Arvo', serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh; /* Ensures the content is centered vertically */
+}
+
+.page_404  img{ width:100%;}
+
+.four_zero_four_bg{
+ 
+ background-image: url(https://cdn.dribbble.com/users/285475/screenshots/2083086/dribbble_1.gif);
+    height: 400px;
+    background-position: center;
+ }
+ 
+ 
+ .four_zero_four_bg h1{
+ font-size:80px;
+ }
+ 
+  .four_zero_four_bg h3{
+       font-size:80px;
+       }
+       
+       .link_404{      
+  color: #fff!important;
+    padding: 10px 20px;
+    background: #39ac31;
+    margin: 20px 0;
+    display: inline-block;}
+  .contant_box_404{ margin-top:-50px;}
+
+  .pic {
+    margin-top: 30px;
+    margin-bottom: 20px;
+}
+
+.card-block {
+    width: 200px;
+    border: 1px solid lightgrey;
+    border-radius: 5px !important;
+    background-color: #FAFAFA;
+    margin-bottom: 30px;
+}
+
+.card-body.show {
+    display: block;
+}
+.card {
+    padding-bottom: 20px;
+    box-shadow: 2px 2px 6px 0px rgb(200, 167, 216);
+}
+.radio {
+    display: inline-block;
+    border-radius: 0;
+    box-sizing: border-box;
+    cursor: pointer;
+    color: #000;
+    font-weight: 500;
+}
+
+.radio:hover {
+    box-shadow: 2px 2px 2px 2px rgba(0, 0, 0, 0.1);
+}

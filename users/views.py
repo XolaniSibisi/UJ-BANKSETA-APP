@@ -18,7 +18,7 @@ from flask_login import (
 )
 
 from users.extensions import database as db, csrf
-from users.models import User, Profile, Content, Contact, Slots, Post, Comment, Like, Notification
+from users.models import User, Profile, Content, Contact, Slots, Post, Comment, Like, Notification, Papers
 from users.catalogues import maths_catalogue, physical_science_catalogue
 from users.forms import (
     RegisterForm,
@@ -32,14 +32,18 @@ from users.forms import (
     EditUserProfileForm,
     CreateSlotForm,
     PostForm,
-    CommentForm
+    CommentForm,
+    PapersForm
 )
 from users.utils import (
     unique_security_token,
     get_unique_filename,
     send_reset_password,
     send_reset_email,
-    send_notification_email
+    send_notification_email,
+    send_application_accepted_email,
+    send_application_rejected_email,
+    send_volunteer_thank_you_email
 )
 
 from flask_mail import Message
@@ -62,6 +66,8 @@ users = Blueprint('users', __name__, template_folder='templates')
 
 CORS(users)
 
+logging.basicConfig(level=logging.DEBUG)
+
 @users.route('/register', methods=['GET', 'POST'], strict_slashes=False)
 def register():
     form = RegisterForm()
@@ -76,16 +82,29 @@ def register():
         email = form.data.get('email')
         role = form.data.get('role')
         password = form.data.get('password')
-        
+
         # Save uploaded files
         id_copy_filename = None
         certificates_filename = None
         if form.id_copy.data:
             id_copy_filename = secure_filename(form.id_copy.data.filename)
-            form.id_copy.data.save(os.path.join(current_app.config['UPLOAD_FOLDER_SUPPORTING_DOCUMENTS'], id_copy_filename))
+            id_copy_destination = os.path.join(
+                current_app.config['UPLOAD_FOLDER_SUPPORTING_DOCUMENTS'], id_copy_filename)
+            os.makedirs(os.path.dirname(id_copy_destination), exist_ok=True)
+            # Debugging statement
+            print("ID Copy Destination:", id_copy_destination)
+            form.id_copy.data.save(id_copy_destination)
+
         if form.certificates.data:
-            certificates_filename = secure_filename(form.certificates.data.filename)
-            form.certificates.data.save(os.path.join(current_app.config['UPLOAD_FOLDER_SUPPORTING_DOCUMENTS'], certificates_filename))
+            certificates_filename = secure_filename(
+                form.certificates.data.filename)
+            certificates_destination = os.path.join(
+                current_app.config['UPLOAD_FOLDER_SUPPORTING_DOCUMENTS'], certificates_filename)
+            os.makedirs(os.path.dirname(
+                certificates_destination), exist_ok=True)
+            # Debugging statement
+            print("Certificates Destination:", certificates_destination)
+            form.certificates.data.save(certificates_destination)
 
         try:
             user = User(
@@ -98,20 +117,85 @@ def register():
             )
             user.set_password(password)
             user.save()
-            user.send_confirmation()
-            
-            # Send documents via email
             if role == 'volunteer':
-                send_documents_email(user.id, id_copy_filename, certificates_filename)
-                
-            flash("A confirmation link sent to your email. Please verify your account.", 'info')
-            return redirect(url_for('users.login'))
-            
+                send_volunteer_thank_you_email(user.email)
+                send_documents_email(
+                    user.id, id_copy_filename, certificates_filename)
+                flash(
+                    "Thank you for registering with us, a message with more information has been sent to your email.", 'info')
+                return redirect(url_for('users.login'))
+
+            else:
+                user.send_confirmation()
+                flash(
+                    "A confirmation link has been sent to your email. Please verify your account.", 'info')
+                return redirect(url_for('users.login'))
+
         except Exception as e:
             flash("Something went wrong", 'error')
             return redirect(url_for('users.register'))
 
     return render_template('register.html', form=form)
+
+# Route for verifying volunteer applications
+
+
+@users.route('/verification', methods=['GET', 'POST'], strict_slashes=False)
+@login_required
+def verification():
+    form = ContactForm()
+    if current_user.role == 'admin':
+        if request.method == 'POST':
+            # Check if 'verify' button was clicked
+            volunteer_id = request.form.get('volunteer_id')
+            action = request.form.get('action')
+            if action == 'verify':
+                # Change active status in the database to 1
+                volunteer = User.query.get(volunteer_id)
+                if volunteer:
+                    volunteer.active = True
+                    db.session.commit()
+                    # Send application accepted email
+                    send_application_accepted_email(volunteer.email)
+                    flash(
+                        f'{volunteer.username} has been verified successfully.', 'success')
+                else:
+                    flash('Volunteer not found.', 'error')
+            else:
+                flash('Invalid action.', 'error')
+            return redirect(url_for('users.verification'))
+
+        # Fetch a list of volunteers that need to be verified
+        volunteers_to_verify = User.query.filter_by(
+            role='volunteer', active=False).all()
+        return render_template('verification.html', user=current_user, volunteers=volunteers_to_verify, form=form)
+    else:
+        return redirect(url_for('users.home'))
+
+# Route for rejecting volunteer applications
+
+
+@users.route('/rejection', methods=['POST'])
+@login_required
+def rejection():
+    if current_user.role == 'admin':
+        if request.method == 'POST':
+            # Check if 'reject' button was clicked
+            volunteer_id = request.form.get('volunteer_id')
+            action = request.form.get('action')
+
+            volunteer = User.query.get(volunteer_id)
+            if volunteer:
+                # Delete the user from the database
+                db.session.delete(volunteer)
+                db.session.commit()
+                # Send application rejected email
+                send_application_rejected_email(volunteer.email)
+                flash(f'{volunteer.username} has been rejected.', 'success')
+            else:
+                flash('Volunteer not found.', 'error')
+        return redirect(url_for('users.verification'))
+
 
 def send_documents_email(user_id, id_copy_filename, certificates_filename):
     try:
@@ -119,24 +203,38 @@ def send_documents_email(user_id, id_copy_filename, certificates_filename):
         user = User.query.get(user_id)
         if user:
             # Create the email message
-            msg = Message('Documents Attached', sender=user.email, recipients=[os.environ.get('MAIL_USERNAME', None)])
+            msg = Message('Documents Attached', sender=user.email, recipients=[
+                          os.environ.get('MAIL_USERNAME', None)])
             msg.body = f'User {user.username} has registered as a volunteer.'
-            
+
+            # Construct full paths for attachments
+            id_copy_path = os.path.join(
+                current_app.config['UPLOAD_FOLDER_SUPPORTING_DOCUMENTS'], id_copy_filename)
+            certificates_path = os.path.join(
+                current_app.config['UPLOAD_FOLDER_SUPPORTING_DOCUMENTS'], certificates_filename)
+
+            # Debugging: Print out paths
+            print("ID Copy Path:", id_copy_path)
+            print("Certificates Path:", certificates_path)
+
             # Attach the documents
-            if id_copy_filename:
-                with current_app.open_resource(os.path.join(current_app.config['UPLOAD_FOLDER_SUPPORTING_DOCUMENTS'], id_copy_filename)) as id_copy_file:
-                    msg.attach(id_copy_filename, 'application/pdf', id_copy_file.read())
-            if certificates_filename:
-                with current_app.open_resource(os.path.join(current_app.config['UPLOAD_FOLDER_SUPPORTING_DOCUMENTS'], certificates_filename)) as certificates_file:
-                    msg.attach(certificates_filename, 'application/pdf', certificates_file.read())
-            
+            if id_copy_filename and os.path.exists(id_copy_path):
+                with open(id_copy_path, 'rb') as id_copy_file:
+                    msg.attach(id_copy_filename, 'application/pdf',
+                               id_copy_file.read())
+            if certificates_filename and os.path.exists(certificates_path):
+                with open(certificates_path, 'rb') as certificates_file:
+                    msg.attach(certificates_filename,
+                               'application/pdf', certificates_file.read())
+
             # Send the email
             mail.send(msg)
             print('Documents email sent successfully.')  # Debugging statement
         else:
             print('User not found.')  # Debugging statement
     except Exception as e:
-        print(f'Error sending documents email: {str(e)}')  # Debugging statement
+        # Debugging statement
+        print(f'Error sending documents email: {str(e)}')
 
 
 @users.route('/login', methods=['GET', 'POST'], strict_slashes=False)
@@ -174,6 +272,7 @@ def login():
 
     return render_template('login.html', form=form)
 
+
 @users.route('/account/confirm?token=<string:token>', methods=['GET', 'POST'], strict_slashes=False)
 def confirm_account(token=None):
     auth_user = User.query.filter_by(security_token=token).first_or_404()
@@ -188,7 +287,7 @@ def confirm_account(token=None):
                            duration=timedelta(days=15))
                 flash(
                     f"Welcome {auth_user.username}, You're registered successfully.", 'success')
-                return redirect(url_for('users.home'))
+                return redirect(url_for('users.profile'))
             except Exception as e:
                 flash("Something went wrong.", 'error')
                 return redirect(url_for('users.login'))
@@ -351,6 +450,13 @@ def home():
     form = ContactForm()
     return render_template('home.html', profile=profile, form=form)
 
+
+@users.route('/error', strict_slashes=False)
+def error():
+    form = ContactForm()
+    return render_template('error.html', form=form)
+
+
 @users.route('/profile', methods=['GET', 'POST'], strict_slashes=False)
 @login_required
 def profile():
@@ -362,12 +468,14 @@ def profile():
     # Fetch the taken teaching slots if the user is a volunteer
     taken_teaching_slots = []
     if current_user.role == 'volunteer':
-        taken_teaching_slots = Slots.query.filter_by(volunteer_id=profile.id).all()
+        taken_teaching_slots = Slots.query.filter_by(
+            volunteer_id=profile.id).all()
 
     # Fetch the taken attending slots if the user is a student
     taken_attending_slots = []
     if current_user.role == 'student':
-        taken_attending_slots = Slots.query.filter_by(student_id=profile.id).all()
+        taken_attending_slots = Slots.query.filter_by(
+            student_id=profile.id).all()
 
     if form.validate_on_submit():
         username = form.data.get('username')
@@ -402,7 +510,7 @@ def admin_profile():
     form = ContactForm()
     if current_user.role != 'admin':
         abort(403)  # Forbidden: Only admins can access this page
-    
+
     # Fetch profiles for both students and volunteers
     students = User.query.filter_by(role='student').all()
     volunteers = User.query.filter_by(role='volunteer').all()
@@ -446,7 +554,6 @@ def view_user(user_id):
                            taken_attending_slots=taken_attending_slots, form=form)
 
 
-
 @users.route('/delete_user/<user_id>', methods=['POST'], strict_slashes=False)
 @login_required
 def delete_user(user_id):
@@ -459,6 +566,7 @@ def delete_user(user_id):
         flash("User deleted successfully.", 'success')
     return redirect(url_for('users.admin_profile'))
 
+
 @users.route('/contact', methods=['GET', 'POST'])
 @login_required
 def contact():
@@ -470,16 +578,16 @@ def contact():
             subject=form.subject.data,
             message=form.message.data
         )
-        
+
         entry.save()
-        
-        
-        send_email(form.name.data, form.email.data, form.subject.data, form.message.data)
-        
-        
+
+        send_email(form.name.data, form.email.data,
+                   form.subject.data, form.message.data)
+
         return redirect(url_for('users.contact_success'))
-    
+
     return render_template('contact.html', form=form)
+
 
 @users.route('/contact/success')
 @login_required
@@ -487,19 +595,20 @@ def contact_success():
     form = ContactForm()
     return render_template('contact_success.html', form=form)
 
+
 def send_email(name, email, subject, message):
     msg = Message(subject=f"New message from {name} via contact form",
                   sender=current_user.email if current_user.is_authenticated else form.email.data,
                   recipients=[os.environ.get('MAIL_USERNAME')])
     msg.body = f"Name: {name}\nEmail: {email}\nSubject: {subject}\nMessage: {message}"
-    
+
     try:
-        mail.send(msg)  
+        mail.send(msg)
         return True
     except Exception as e:
         print(f"Error sending email: {e}")
         return False
-        
+
 
 # route to edit profile
 @users.route('/edit_profile', methods=['GET', 'POST'], strict_slashes=False)
@@ -536,6 +645,7 @@ def edit_profile():
 
     return render_template('edit_profile.html', form=form, profile=profile)
 
+
 @users.route('/forum', methods=['GET', 'POST'], strict_slashes=False)
 @login_required
 def forum():
@@ -543,13 +653,15 @@ def forum():
     all_users_count = User.query.filter(User.role != 'admin').count()
     all_post = len(Post.query.all())
     cutoff_date = datetime.utcnow() - timedelta(days=2)
-    new_member = User.query.order_by(desc(User.created_at)).distinct(User.username).first()
-    all_topics_count = Post.query.with_entities(func.count(Post.title.distinct())).scalar()
+    new_member = User.query.order_by(
+        desc(User.created_at)).distinct(User.username).first()
+    all_topics_count = Post.query.with_entities(
+        func.count(Post.title.distinct())).scalar()
     current_date = datetime.now()
     user = User.query.get_or_404(current_user.id)
-    
+
     mark_notifications_as_read(current_user.id)
-    
+
     # Query for posts with recent comments
     active_topics = Post.query \
         .join(Comment, Comment.post_id == Post.id) \
@@ -561,23 +673,29 @@ def forum():
         # Perform search
         search_query = request.form.get('search_query')
         if search_query:
-            posts = Post.query.filter(Post.title.ilike(f'%{search_query}%') | Post.content.ilike(f'%{search_query}%')).order_by(Post.date_posted.desc()).all()
+            posts = Post.query.filter(Post.title.ilike(f'%{search_query}%') | Post.content.ilike(
+                f'%{search_query}%')).order_by(Post.date_posted.desc()).all()
         else:
             posts = []
     else:
         # Regular page loading
         page = request.args.get('page', 1, type=int)
-        posts = Post.query.order_by(Post.date_posted.desc()).paginate(page=page, per_page=5)
+        posts = Post.query.order_by(
+            Post.date_posted.desc()).paginate(page=page, per_page=5)
 
     return render_template('forum.html', posts=posts, form=form, current_date=current_date, format_time_difference=format_time_difference, all_users_count=all_users_count, all_post=all_post, all_topics_count=all_topics_count, new_member=new_member, active_topics=active_topics)
 
 # Function to mark notifications as read
+
+
 def mark_notifications_as_read(user_id):
-    notifications = Notification.query.filter_by(recipient_id=user_id, read=False).all()
+    notifications = Notification.query.filter_by(
+        recipient_id=user_id, read=False).all()
     for notification in notifications:
         notification.read = True
     db.session.commit()
-    
+
+
 @users.route('/search_forum', methods=['GET', 'POST'], strict_slashes=False)
 @login_required
 def search_forum():
@@ -585,30 +703,35 @@ def search_forum():
     all_users_count = User.query.filter(User.role != 'admin').count()
     all_post = len(Post.query.all())
     cutoff_date = datetime.utcnow() - timedelta(days=2)
-    new_member = User.query.order_by(desc(User.created_at)).distinct(User.username).first()
-    all_topics_count = Post.query.with_entities(func.count(Post.title.distinct())).scalar()
+    new_member = User.query.order_by(
+        desc(User.created_at)).distinct(User.username).first()
+    all_topics_count = Post.query.with_entities(
+        func.count(Post.title.distinct())).scalar()
     current_date = datetime.now()
     user = User.query.get_or_404(current_user.id)
-    
+
     # Query for posts with recent comments
     active_topics = Post.query \
         .join(Comment, Comment.post_id == Post.id) \
         .filter(Comment.date_posted >= cutoff_date) \
         .distinct() \
         .all()
-    
+
     if request.method == 'POST':
         search_query = request.form.get('search_query')
         if search_query:
             # Query for search results
-            posts = Post.query.filter(Post.title.ilike(f'%{search_query}%') | Post.content.ilike(f'%{search_query}%')).order_by(Post.date_posted.desc()).paginate(page=1, per_page=5)
+            posts = Post.query.filter(Post.title.ilike(f'%{search_query}%') | Post.content.ilike(
+                f'%{search_query}%')).order_by(Post.date_posted.desc()).paginate(page=1, per_page=5)
             return render_template('forum.html', posts=posts, form=form, current_date=current_date, format_time_difference=format_time_difference, all_users_count=all_users_count, all_post=all_post, all_topics_count=all_topics_count, new_member=new_member, active_topics=active_topics)
 
     # If no search query provided or no search results, render forum template with regular pagination
     page = request.args.get('page', 1, type=int)
-    posts = Post.query.order_by(Post.date_posted.desc()).paginate(page=page, per_page=5)
+    posts = Post.query.order_by(
+        Post.date_posted.desc()).paginate(page=page, per_page=5)
     return render_template('forum.html', posts=posts, form=form, current_date=current_date, format_time_difference=format_time_difference, all_users_count=all_users_count, all_post=all_post, all_topics_count=all_topics_count, new_member=new_member, active_topics=active_topics)
-    
+
+
 def format_time_difference(delta):
     if delta.days == 0:
         seconds = delta.seconds
@@ -622,27 +745,31 @@ def format_time_difference(delta):
             return f"{hours} hours ago"
     else:
         return f"{delta.days} day(s) ago"
-    
-@users.route("/post/new",methods=['POST','GET'])
+
+
+@users.route("/post/new", methods=['POST', 'GET'])
 @login_required
 def new_post():
     form = PostForm()
     if form.validate_on_submit():
-        
+
         attachment_filename = None
         if form.attachment.data:
-            attachment_filename = secure_filename(form.attachment.data.filename)
+            attachment_filename = secure_filename(
+                form.attachment.data.filename)
             uploads_folder = current_app.config['UPLOAD_FOLDER_LOCAL_FILES']
             attachment_path = os.path.join(uploads_folder, attachment_filename)
             form.attachment.data.save(attachment_path)
-            
-        post = Post(title=form.title.data,content=form.content.data,author=current_user, attachment=attachment_filename)
+
+        post = Post(title=form.title.data, content=form.content.data,
+                    author=current_user, attachment=attachment_filename)
         db.session.add(post)
         db.session.commit()
-        
-        flash('Your post has been created !','success')
+
+        flash('Your post has been created !', 'success')
         return redirect(url_for('users.forum'))
-    return render_template('create_post.html',title="Create Post",form=form,legend='Update Post')
+    return render_template('create_post.html', title="Create Post", form=form, legend='Update Post')
+
 
 @users.route("/post/<int:post_id>", methods=['GET', 'POST'])
 @login_required
@@ -652,47 +779,46 @@ def post(post_id):
     comments = Comment.query.filter_by(post_id=post_id).all()
     all_comments_count = db.session.query(Comment).count()
     current_date = datetime.now()
-    local_tz = pytz.timezone('Africa/Johannesburg')
-    localized_datetime = post.date_posted.astimezone(local_tz)
-    formatted_date_posted = localized_datetime.strftime('%m %d, %Y')
+    date_posted = post.date_posted.strftime('%m %d, %Y')
 
-    post.date_posted = formatted_date_posted
-    
-    
     # Retrieve profile information for each comment author
     comment_profiles = {}
     for comment in comments:
-        profile = Profile.query.filter_by(user_id=comment.author.id).first_or_404()
+        profile = Profile.query.filter_by(
+            user_id=comment.author.id).first_or_404()
         comment_profiles[comment.id] = profile
-    
+
     # Retrieve profile information for the post author
-    post_profile = Profile.query.filter_by(user_id=post.author.id).first_or_404()
-    
+    post_profile = Profile.query.filter_by(
+        user_id=post.author.id).first_or_404()
+
     if form.validate_on_submit():
-        comment = Comment(body=form.body.data, author=current_user, user_id=current_user.id, post_id=post_id)
+        comment = Comment(body=form.body.data, author=current_user,
+                          user_id=current_user.id, post_id=post_id)
         db.session.add(comment)
         db.session.commit()
         flash('Your comment has been posted.', 'success')
         # Create notification for the post author
-        notification = Notification(recipient_id=post.author.id, sender_id=current_user.id, post_id=post_id, notification_type='comment')
+        notification = Notification(
+            recipient_id=post.author.id, sender_id=current_user.id, post_id=post_id, notification_type='comment')
         db.session.add(notification)
         db.session.commit()
         return redirect(url_for('users.post', post_id=post_id))
-    
+
     return render_template('post.html', title=post.title, post=post, current_date=current_date, format_time_difference=format_time_difference, form=form, comments=comments, comment_profiles=comment_profiles, post_profile=post_profile, all_comments_count=all_comments_count, date_posted=date_posted)
+
 
 def get_notification_count(user_id):
     return Notification.query.filter_by(recipient_id=user_id, read=False).count()
-
 
 @users.route("/increment_view_count/<int:post_id>", methods=['POST'])
 @login_required
 def increment_view_count(post_id):
     post = Post.query.get_or_404(post_id)
-    
+
     if post is None:
         abort(404, "Post not found")
-    
+
     if current_user.id != post.user_id:
         # Increment view count
         post.views = post.views + 1 if post.views is not None else 1
@@ -701,7 +827,8 @@ def increment_view_count(post_id):
     else:
         return jsonify({'success': False, 'message': 'View count not incremented for own post'}), 400
 
-@users.route("/post/<int:post_id>/update", methods=['POST','GET'])
+
+@users.route("/post/<int:post_id>/update", methods=['POST', 'GET'])
 @login_required
 def update_post(post_id):
     post = Post.query.get_or_404(post_id)
@@ -712,14 +839,15 @@ def update_post(post_id):
         post.title = form.title.data
         post.content = form.content.data
         db.session.commit()
-        flash('Your post has been updated !','success')
-        return redirect(url_for('users.post',post_id=post.id))
+        flash('Your post has been updated !', 'success')
+        return redirect(url_for('users.post', post_id=post.id))
     elif request.method == 'GET':
         form.title.data = post.title
-        form.content.data = post.content    
-    return render_template('create_post.html',title="Update Post",form=form,legend='Update Post')
+        form.content.data = post.content
+    return render_template('create_post.html', title="Update Post", form=form, legend='Update Post')
 
-@users.route("/delete/<int:post_id>/update",methods=['POST'])
+
+@users.route("/delete/<int:post_id>/update", methods=['POST'])
 @login_required
 def delete_post(post_id):
     post = Post.query.get_or_404(post_id)
@@ -729,6 +857,7 @@ def delete_post(post_id):
     db.session.commit()
     flash("Your post has been deleted ", 'success')
     return redirect(url_for('users.forum'))
+
 
 @users.route("/delete/<int:comment_id>", methods=['POST'])
 @login_required
@@ -742,6 +871,7 @@ def delete_comment(comment_id):
     flash("Your comment has been deleted", 'success')
     return redirect(url_for('users.post', post_id=post_id))
 
+
 @users.route('/update_comment/<int:comment_id>/update', methods=['POST', 'GET'])
 @login_required
 def update_comment(comment_id):
@@ -750,16 +880,17 @@ def update_comment(comment_id):
     comments = Comment.query.filter_by(post_id=comment.post_id).all()
     updated_at = comment.updated_at.strftime('%H:%M:%S')
     form = CommentForm()
-    
+
     if comment.author != current_user:
         abort(403)
-        
+
     # Retrieve profile information for each comment author
     comment_profiles = {}
     for comment in comments:
-        profile = Profile.query.filter_by(user_id=comment.author.id).first_or_404()
+        profile = Profile.query.filter_by(
+            user_id=comment.author.id).first_or_404()
         comment_profiles[comment.id] = profile
-    
+
     if form.validate_on_submit():
         comment.body = form.body.data
         db.session.commit()
@@ -767,14 +898,15 @@ def update_comment(comment_id):
         return redirect(url_for('users.post', post_id=comment.post_id))
     elif request.method == 'GET':
         form.body.data = comment.body
-    
+
     return render_template('update_comment.html', form=form, comment=comment, current_date=current_date, format_time_difference=format_time_difference, comment_profiles=comment_profiles, updated_at=updated_at)
 
 @users.route("/like-post/<post_id>", methods=['POST'])
 @login_required
 def like_post(post_id):
     post = Post.query.get_or_404(post_id)
-    like = Like.query.filter_by(user_id=current_user.id, post_id=post_id).first()
+    like = Like.query.filter_by(
+        user_id=current_user.id, post_id=post_id).first()
 
     if not post:
         return jsonify({'error': 'Post does not exist.'}, 400)
@@ -784,7 +916,8 @@ def like_post(post_id):
         db.session.delete(like)
         db.session.commit()
         # Delete existing notification if it exists
-        notification = Notification.query.filter_by(recipient_id=post.author.id, sender_id=current_user.id, post_id=post_id, notification_type='like').first()
+        notification = Notification.query.filter_by(
+            recipient_id=post.author.id, sender_id=current_user.id, post_id=post_id, notification_type='like').first()
         if notification:
             db.session.delete(notification)
             db.session.commit()
@@ -794,51 +927,35 @@ def like_post(post_id):
         db.session.add(like)
         db.session.commit()
         # Create notification for the post author
-        notification = Notification(recipient_id=post.author.id, sender_id=current_user.id, post_id=post_id, notification_type='like')
+        notification = Notification(
+            recipient_id=post.author.id, sender_id=current_user.id, post_id=post_id, notification_type='like')
         db.session.add(notification)
         db.session.commit()
 
     return redirect(request.referrer)
 
-
-@users.route("/like-comment/<comment_id>", methods=['POST'])
-@login_required
-def like_comment(comment_id):
-    comment = Comment.query.filter_by(id=comment_id).first()
-    like = Like.query.filter_by(user_id=current_user.id, comment_id=comment_id).first()
-        
-    if not comment:
-        return jsonify({'error': 'Comment does not exist.'}, 400)
-    elif like:
-        db.session.delete(like)
-        db.session.commit()
-    else:
-        like = Like(user_id=current_user.id, comment_id=comment_id)
-        db.session.add(like)
-        db.session.commit()
-
-    return jsonify({"likes": len(comment.likes), "liked": current_user.id in map(lambda x: x.user_id, comment.likes)})
-
-@users.route("/user/<string:username>",methods=['GET'])
+@users.route("/user/<string:username>", methods=['GET'])
 @login_required
 def user_posts(username):
     form = ContactForm()
     current_date = datetime.now()
     profile = Profile.query.filter_by(user_id=current_user.id).first_or_404()
-    page = request.args.get('page',1,type=int)
-    user= User.query.filter_by(username = username).first_or_404()
+    page = request.args.get('page', 1, type=int)
+    user = User.query.filter_by(username=username).first_or_404()
     author_profile = Profile.query.filter_by(user_id=user.id).first()
-    posts = Post.query.filter_by(author = user).order_by(Post.date_posted.desc()).paginate(page=page,per_page=5)
-    return render_template('user_post.html',posts=posts,title=username+" Posts",user=user, current_date=current_date, format_time_difference=format_time_difference, author_profile=author_profile, form=form)
+    posts = Post.query.filter_by(author=user).order_by(
+        Post.date_posted.desc()).paginate(page=page, per_page=5)
+    return render_template('user_post.html', posts=posts, title=username+" Posts", user=user, current_date=current_date, format_time_difference=format_time_difference, author_profile=author_profile, form=form)
+
 
 @users.route('/search', methods=['POST'], strict_slashes=False)
 @login_required
 def search():
     form = ContactForm()
     search_query = request.form.get('searched')
-    
+
     print("Search query:", search_query)
-    
+
     # Check if search query is empty
     if not search_query:
         return render_template('search.html', search_results=[])
@@ -883,13 +1000,13 @@ def search():
         Slots.date.ilike(f'%{search_query}%'),
         Slots.teams_link.ilike(f'%{search_query}%')
     )).all()
-    
+
     # Add 'type' attribute to slots_results
     for slot in slots_results:
         slot.type = 'slots'
 
     search_results.extend(slots_results)
-    
+
     # Render the template with the search results
     return render_template('search.html', search_results=search_results, form=form)
 
@@ -905,6 +1022,102 @@ def preprocess_content_data(content_list):
             content_data[topic][subtopic] = []
         content_data[topic][subtopic].append(content)
     return content_data
+
+@users.route('/papers', methods=['GET','POST'])
+@login_required
+def papers():
+    form = PapersForm()
+    if form.validate_on_submit():
+        title = form.title.data
+        stem = form.stem.data
+        year_written = form.year_written.data
+        link = form.link.data
+        paper_type = form.paper_type.data
+        
+        # Determine the link based on stem and paper_type
+        if stem == 'maths':
+            if paper_type == 'caps':
+                maths_caps_link = link
+            elif paper_type == 'ieb':
+                maths_ieb_link = link
+        elif stem == 'science':
+            if paper_type == 'caps':
+                science_caps_link = link
+            elif paper_type == 'ieb':
+                science_ieb_link = link
+        
+        # Save the paper to the database
+        paper = Papers(title=title, stem=stem, year_written=year_written, paper_type=paper_type, link=link, user_id=current_user.id)
+        db.session.add(paper)
+        db.session.commit()
+        flash('Paper uploaded successfully.', 'success')
+        return redirect(url_for('users.papers'))
+    
+    return render_template('papers.html', form=form)
+
+@users.route('/view_papers', methods=['GET'])
+@login_required
+def view_papers():
+    form = ContactForm()
+    papers = Papers.query.all()
+    return render_template('view_papers.html', papers=papers, form=form)
+
+@users.route('/papers_by_year', methods=['GET'])
+@login_required
+def papers_by_year():
+    form = ContactForm()
+    
+    # Get the paper_type and stem from the request arguments
+    paper_type = request.args.get('paper_type')
+    stem = request.args.get('stem')
+    
+    # Filter papers based on the provided paper_type and stem
+    if paper_type == 'caps' and stem == 'maths':
+        papers = Papers.query.filter_by(stem='maths', paper_type='caps').all()
+    elif paper_type == 'ieb' and stem == 'maths':
+        papers = Papers.query.filter_by(stem='maths', paper_type='ieb').all()
+    elif paper_type == 'caps' and stem == 'science':
+        papers = Papers.query.filter_by(stem='science', paper_type='caps').all()
+    elif paper_type == 'ieb' and stem == 'science':
+        papers = Papers.query.filter_by(stem='science', paper_type='ieb').all()
+    else:
+        # Handle invalid parameters or no parameters provided
+        flash('Invalid request parameters', 'error')
+        return redirect(url_for('users.view_papers'))
+    
+    return render_template('papers_by_year.html', papers=papers, form=form)
+
+@users.route('/maths_caps_papers', methods=['GET'])
+@login_required
+def maths_caps_papers():
+    papers = Papers.query.filter_by(stem='maths', paper_type='caps').all()
+    return render_template('papers_by_year.html', papers=papers)
+
+@users.route('/maths_ieb_papers', methods=['GET'])
+@login_required
+def maths_ieb_papers():
+    papers = Papers.query.filter_by(stem='maths', paper_type='ieb').all()
+    return render_template('papers_by_year.html', papers=papers)
+
+@users.route('/science_caps_papers', methods=['GET'])
+@login_required
+def science_caps_papers():
+    papers = Papers.query.filter_by(stem='science', paper_type='caps').all()
+    return render_template('papers_by_year.html', papers=papers)
+
+@users.route('/science_ieb_papers', methods=['GET'])
+@login_required
+def science_ieb_papers():
+    papers = Papers.query.filter_by(stem='science', paper_type='ieb').all()
+    return render_template('papers_by_year.html', papers=papers)
+
+@users.route('/access_content', methods=['GET'])
+@login_required
+def access_content():
+    form = ContactForm()
+    content = Content.query.all()
+    content_data = preprocess_content_data(content)
+    return render_template('access_content.html', content_data=content_data, form=form)
 
 @users.route('/maths_content', methods=['GET'])
 @login_required
@@ -949,6 +1162,7 @@ def science_content():
 
     return render_template('science_content.html', content_data=content_data, form=form)
 
+
 def save_file_to_server(file):
     """
     Save the uploaded file to the server.
@@ -967,6 +1181,8 @@ def save_file_to_server(file):
         return None
 
 # Define a route to handle the upload_content.html template
+
+
 @users.route('/upload_content', methods=['GET', 'POST'])
 @login_required
 def upload_content():
@@ -974,16 +1190,20 @@ def upload_content():
 
     # Populate topic choices based on selected STEM
     if form.stem.data == 'maths':
-        form.topic.choices = [(chapter, chapter) for chapter in maths_catalogue.keys()]
+        form.topic.choices = [(chapter, chapter)
+                              for chapter in maths_catalogue.keys()]
     elif form.stem.data == 'science':
-        form.topic.choices = [(chapter, chapter) for chapter in physical_science_catalogue.keys()]
+        form.topic.choices = [(chapter, chapter)
+                              for chapter in physical_science_catalogue.keys()]
 
     # Populate subtopic choices based on selected topic
     if form.topic.data:
         if form.stem.data == 'maths' and form.topic.data in maths_catalogue:
-            form.subtopic.choices = [(subtopic, subtopic) for subtopic in maths_catalogue[form.topic.data]]
+            form.subtopic.choices = [(subtopic, subtopic)
+                                     for subtopic in maths_catalogue[form.topic.data]]
         elif form.stem.data == 'science' and form.topic.data in physical_science_catalogue:
-            form.subtopic.choices = [(subtopic, subtopic) for subtopic in physical_science_catalogue[form.topic.data]]
+            form.subtopic.choices = [
+                (subtopic, subtopic) for subtopic in physical_science_catalogue[form.topic.data]]
 
     if form.validate_on_submit():
         content_type = form.content_type.data
@@ -1029,17 +1249,23 @@ def upload_content():
     return render_template('upload_content.html', form=form, maths_catalogue=maths_catalogue, physical_science_catalogue=physical_science_catalogue)
 
 # Define a route to handle the no_content.html template
+
+
 @users.route('/no_content', methods=['GET'])
 @login_required
 def no_content():
     return render_template('no_content.html')
 
 # favicon route
+
+
 @users.route("/favicon.ico")
 def favicon():
     return "", 200
 
 # Define a function to convert YouTube watch URLs to embed URLs
+
+
 def convert_to_embed_link(link):
     parsed_url = urlparse(link)
     video_id = parse_qs(parsed_url.query).get('v')
@@ -1047,10 +1273,12 @@ def convert_to_embed_link(link):
         return f"https://www.youtube.com/embed/{video_id[0]}"
     return None
 
+
 @users.route('/content_files/<file_name>', methods=['GET'])
 def serve_content_file(file_name):
     # Construct the absolute path to the content file
-    file_path = os.path.join(current_app.config['UPLOAD_FOLDER_LOCAL_FILES'], file_name)
+    file_path = os.path.join(
+        current_app.config['UPLOAD_FOLDER_LOCAL_FILES'], file_name)
 
     # Check if the file exists
     if os.path.exists(file_path):
@@ -1061,6 +1289,8 @@ def serve_content_file(file_name):
         abort(404)
 
 # Define the view_content endpoint
+
+
 @users.route('/view_content/<content_id>')
 @login_required
 def view_content(content_id):
@@ -1084,26 +1314,30 @@ def view_content(content_id):
         flash('Content not found', 'error')
         return redirect(url_for('users.home', form=form))
 
+
 @users.route('/uploads/<path:filename>', methods=['GET'])
 @login_required
 def serve_uploaded_file(filename):
     uploads = current_app.config['UPLOAD_FOLDER_LOCAL_FILES']
-    return send_from_directory(uploads, filename)   
+    return send_from_directory(uploads, filename)
 
 # Define the download_content endpoint
+
+
 @users.route('/download_content/<content_id>', methods=['GET'])
 @login_required
 def download_content(content_id):
     form = ContactForm()
     # Retrieve the Content object based on the content_id
     content = Content.query.get_or_404(content_id)
-    
+
     if content.content_type == 'video':
         return redirect(content.link)
 
     # If the content is uploaded from the local drive, construct the file URL
     if content.link.startswith('C:\\'):
-        file_url = url_for('users.serve_uploaded_file', filename=os.path.basename(content.link))
+        file_url = url_for('users.serve_uploaded_file',
+                           filename=os.path.basename(content.link))
         # Redirect users to the file URL for download
         return redirect(file_url)
     else:
@@ -1123,7 +1357,8 @@ def download_content(content_id):
                 file_extension = ".pdf"
 
             # Generate a temporary file with the appropriate extension
-            temp_file = tempfile.NamedTemporaryFile(suffix=file_extension, delete=False)
+            temp_file = tempfile.NamedTemporaryFile(
+                suffix=file_extension, delete=False)
 
             # Write the content of the response to the temporary file
             temp_file.write(response.content)
@@ -1146,28 +1381,31 @@ def dashboard():
     form = ContactForm()
     # Fetch all content from the database
     all_content = Content.query.all()
-    
+
     # Get the count of students
     num_students = User.query.filter_by(role='student').count()
 
     # Get the count of volunteers
     num_volunteers = User.query.filter_by(role='volunteer').count()
-    
+
     # Get count for taken slots
     num_slots_taken = Slots.query.filter_by(status='taken').count()
 
     # Calculate slot attendance percentage
-    num_slots_attendance = round(Slots.query.filter(Slots.student_id.isnot(None)).count()/Slots.query.count()*100) if Slots.query.count() > 0 else 0
+    num_slots_attendance = round(Slots.query.filter(Slots.student_id.isnot(
+        None)).count()/Slots.query.count()*100) if Slots.query.count() > 0 else 0
 
     # Get the latest registration date for students
-    latest_student_registration = User.query.filter_by(role='student').order_by(User.created_at.desc()).first()
+    latest_student_registration = User.query.filter_by(
+        role='student').order_by(User.created_at.desc()).first()
     if latest_student_registration:
         last_student_registration_date = latest_student_registration.created_at
     else:
         last_student_registration_date = None
 
     # Get the latest registration date for volunteers
-    latest_volunteer_registration = User.query.filter_by(role='volunteer').order_by(User.created_at.desc()).first()
+    latest_volunteer_registration = User.query.filter_by(
+        role='volunteer').order_by(User.created_at.desc()).first()
     if latest_volunteer_registration:
         last_volunteer_registration_date = latest_volunteer_registration.created_at
     else:
@@ -1188,7 +1426,7 @@ def dashboard():
         most_popular_attended_subtopic = most_common_subtopic[0][0]
     else:
         most_popular_attended_subtopic = "No attended slots yet"
-        
+
     # Query the database to retrieve all slots
     all_slots = Slots.query.all()
 
@@ -1203,14 +1441,15 @@ def dashboard():
         average_taken_slots = round(taken_slots / total_slots)
     else:
         average_taken_slots = 0
-        
-    
+
     return render_template('dashboard.html', num_students=num_students, num_volunteers=num_volunteers,
                            last_student_registration_date=last_student_registration_date,
-                           last_volunteer_registration_date=last_volunteer_registration_date, num_slots_taken=num_slots_taken, 
+                           last_volunteer_registration_date=last_volunteer_registration_date, num_slots_taken=num_slots_taken,
                            num_slots_attendance=num_slots_attendance, all_content=all_content, average_taken_slots=average_taken_slots, most_popular_attended_subtopic=most_popular_attended_subtopic, form=form)
 
 # Route to edit content
+
+
 @users.route('/edit_content/<content_id>', methods=['GET'])
 @login_required
 def edit_content(content_id):
@@ -1219,6 +1458,7 @@ def edit_content(content_id):
     content = Content.query.get_or_404(content_id)
 
     return render_template('edit_content.html', content=content, form=form)
+
 
 @users.route('/edit_content', methods=['POST'])
 @login_required
@@ -1241,10 +1481,12 @@ def update_content():
     return redirect(url_for('users.dashboard'))
 
 # Route to delete content
-@users.route('/delete_content/<content_id>', methods=['GET','POST'])
+
+
+@users.route('/delete_content/<content_id>', methods=['GET', 'POST'])
 @login_required
 def delete_content(content_id):
-    
+
     # Fetch the content by ID
     content = Content.query.get_or_404(content_id)
 
@@ -1256,6 +1498,8 @@ def delete_content(content_id):
     return redirect(url_for('users.dashboard'))
 
 # Route to create a teaching slot
+
+
 @users.route('/create_slot', methods=['GET', 'POST'])
 @login_required
 def create_slot():
@@ -1263,16 +1507,20 @@ def create_slot():
 
     # Populate topic choices based on selected STEM
     if form.stem.data == 'maths':
-        form.topic.choices = [(chapter, chapter) for chapter in maths_catalogue.keys()]
+        form.topic.choices = [(chapter, chapter)
+                              for chapter in maths_catalogue.keys()]
     elif form.stem.data == 'science':
-        form.topic.choices = [(chapter, chapter) for chapter in physical_science_catalogue.keys()]
+        form.topic.choices = [(chapter, chapter)
+                              for chapter in physical_science_catalogue.keys()]
 
     # Populate subtopic choices based on selected topic
     if form.topic.data:
         if form.stem.data == 'maths' and form.topic.data in maths_catalogue:
-            form.subtopic.choices = [(subtopic, subtopic) for subtopic in maths_catalogue[form.topic.data]]
+            form.subtopic.choices = [(subtopic, subtopic)
+                                     for subtopic in maths_catalogue[form.topic.data]]
         elif form.stem.data == 'science' and form.topic.data in physical_science_catalogue:
-            form.subtopic.choices = [(subtopic, subtopic) for subtopic in physical_science_catalogue[form.topic.data]]
+            form.subtopic.choices = [
+                (subtopic, subtopic) for subtopic in physical_science_catalogue[form.topic.data]]
 
     if form.validate_on_submit():
         stem = form.stem.data
@@ -1305,20 +1553,21 @@ def create_slot():
         volunteers = User.query.filter_by(role='volunteer').all()
         # Send email notification to volunteers
         for volunteer in volunteers:
-            send_notification_email([volunteer], 'New Teaching Slot Created', 
-                         f'Hi {volunteer.username},\n\nA new teaching slot has been created.\n\nTopic: {topic}\nSubtopic: {subtopic}\nDate: {date}\nStart Time: {start_time}\nEnd Time: {end_time}\nTeams Link: {teams_link}')
-        
+            send_notification_email([volunteer], 'New Teaching Slot Created',
+                                    f'Hi {volunteer.username},\n\nA new teaching slot has been created.\n\nTopic: {topic}\nSubtopic: {subtopic}\nDate: {date}\nStart Time: {start_time}\nEnd Time: {end_time}\nTeams Link: {teams_link}')
+
         # Retrieve all student users
         students = User.query.filter_by(role='student').all()
         # Send email notification to students
         for student in students:
             send_notification_email([student], 'New Teaching Slot Created',
-                         f'Hi {student.username},\n\nA new teaching slot has been created.\n\nTopic: {topic}\nSubtopic: {subtopic}\nDate: {date}\nStart Time: {start_time}\nEnd Time: {end_time}\nTeams Link: {teams_link}')
+                                    f'Hi {student.username},\n\nA new teaching slot has been created.\n\nTopic: {topic}\nSubtopic: {subtopic}\nDate: {date}\nStart Time: {start_time}\nEnd Time: {end_time}\nTeams Link: {teams_link}')
 
         flash('Teaching slot created successfully. Email notifications sent to volunteers and students.', 'success')
         return redirect(url_for('users.dashboard'))
 
     return render_template('create_slot.html', form=form, maths_catalogue=maths_catalogue, physical_science_catalogue=physical_science_catalogue, )
+
 
 @users.route('/delete_slot/<slot_id>', methods=['POST'], strict_slashes=False)
 @login_required
@@ -1332,6 +1581,7 @@ def delete_slot(slot_id):
         flash('Teaching slot deleted successfully.', 'success')
     return redirect(url_for('users.dashboard'))
 
+
 @users.route('/edit_slot/<slot_id>', methods=['GET'], strict_slashes=False)
 @login_required
 def edit_slot(slot_id):
@@ -1340,6 +1590,7 @@ def edit_slot(slot_id):
     slot = Slots.query.get_or_404(slot_id)
 
     return render_template('edit_slot.html', slot=slot, form=form)
+
 
 @users.route('/edit_slot', methods=['POST'], strict_slashes=False)
 @login_required
@@ -1357,9 +1608,12 @@ def update_slot():
         teams_link = request.form.get('teams_link')
 
         # Extract time component from datetime strings and convert to time objects
-        slot.date = datetime.strptime(request.form.get('date'), '%Y-%m-%d').date()
-        slot.start_time = datetime.strptime(request.form.get('start_time'), '%H:%M:%S').time()
-        slot.end_time = datetime.strptime(request.form.get('end_time'), '%H:%M:%S').time()
+        slot.date = datetime.strptime(
+            request.form.get('date'), '%Y-%m-%d').date()
+        slot.start_time = datetime.strptime(
+            request.form.get('start_time'), '%H:%M:%S').time()
+        slot.end_time = datetime.strptime(
+            request.form.get('end_time'), '%H:%M:%S').time()
 
     # Save the updated slot
     db.session.commit()
@@ -1376,10 +1630,11 @@ def live_classes():
     slots = Slots.query.all()
     return render_template('live_classes.html', slots=slots, form=form)
 
+
 @users.route('/attend_event/<slot_id>', methods=['GET'], strict_slashes=False)
 @login_required
 def attend_event(slot_id):
-    
+
     slot = Slots.query.get(slot_id)
     if not slot:
         flash('Attending slot not found.', 'error')
@@ -1395,7 +1650,7 @@ def attend_event(slot_id):
     if not profile:
         flash('Profile not found.', 'error')
         return redirect(url_for('users.live_classes'))
-    
+
     # Check if the slot is already taken by the user
     if slot.student_id == profile.id:
         flash('You have already taken this attending slot.', 'warning')
@@ -1428,7 +1683,7 @@ def take_slot(slot_id):
     if not profile:
         flash('Profile not found.', 'error')
         return redirect(url_for('users.live_classes', form=form))
-    
+
     # Check if the slot is already taken
     if slot.status == 'taken':
         flash('This teaching slot has already been taken.', 'warning')
@@ -1441,4 +1696,3 @@ def take_slot(slot_id):
 
     flash('Teaching slot taken successfully.', 'success')
     return redirect(url_for('users.profile', form=form))
-

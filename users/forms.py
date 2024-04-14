@@ -155,7 +155,6 @@ class ContactForm(FlaskForm):
 class UploadContentForm(FlaskForm):
     content_type = SelectField('Content Type', choices=[
         ('textbook', 'Textbook'),
-        ('past_year_paper', 'Past Year Paper'),
         ('worksheet', 'Worksheet'),
         ('study_guide', 'Study Guide'),
         ('additional_problem', 'Additional Problem'),
@@ -192,3 +191,11 @@ class PostForm(FlaskForm):
 class CommentForm(FlaskForm):
     body = TextAreaField('Comment', validators=[DataRequired()])
     submit = SubmitField('Submit Comment')
+
+class PapersForm(FlaskForm):
+    title = StringField('Title', validators=[DataRequired()])
+    link = StringField('Link', validators=[URL(), DataRequired()])
+    paper_type = SelectField('Paper Type', choices=[('choose paper type', 'Choose paper type'),('caps', 'CAPS'), ('ieb', 'IEB')], validators=[InputRequired()])
+    stem = SelectField('STEM', choices=[('choose subject', 'Choose Subject'),('maths', 'Maths'), ('science', 'Science')], validators=[InputRequired()])
+    year_written = StringField('Year Written', validators=[DataRequired()])
+    submit = SubmitField('Upload')

@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}Papers by Title{% endblock %}
+
+{% block body %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="mt-5 text-center" style="padding-top: 2.0rem;">Past Year Papers Section</h1>
+            <p class="lead">As the final Matric exams season approaches and Matrics aim to get good Matric results,
+                being prepared and working through grade 12 past papers is of utmost importance. If you are trying to
+                prepare for the upcoming Matric Finals and looking to find some previous exam papers to work through and
+                help you pass Matric, then you came to the right place.</p>
+            <div class="row">
+                <div class="col-md-12">
+                    <table class="table">
+                        <tbody>
+                            <tr>
+                                <th scope="col" class="col with-vertical-line">CAPS Past Papers</th>
+                                <th scope="col" class="col-6">IEB Past Papers</th>
+                            </tr>
+                            <tr>
+                                <td class="with-vertical-line">
+                                    <ul>
+                                        {% set caps_maths_papers = [] %}
+                                        {% set caps_science_papers = [] %}
+                                        {% for paper in papers %}
+                                            {% if paper.paper_type == 'caps' %}
+                                                {% if paper.stem == 'maths' %}
+                                                    {% set caps_maths_papers = caps_maths_papers.append(paper) %}
+                                                {% elif paper.stem == 'science' %}
+                                                    {% set caps_science_papers = caps_science_papers.append(paper) %}
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        {% if caps_maths_papers %}
+                                            <li><a href="{{ url_for('users.papers_by_year', paper_type='caps', stem='maths') }}">Mathematics Exam Papers (CAPS)</a></li>
+                                        {% endif %}
+                                        {% if caps_science_papers %}
+                                            <li><a href="{{ url_for('users.papers_by_year', paper_type='caps', stem='science') }}">Physical Science Exam Papers (CAPS)</a></li>
+                                        {% endif %}
+                                    </ul>
+                                </td>
+                                <td>
+                                    <ul>
+                                        {% set ieb_maths_papers = [] %}
+                                        {% set ieb_science_papers = [] %}
+                                        {% for paper in papers %}
+                                            {% if paper.paper_type == 'ieb' %}
+                                                {% if paper.stem == 'maths' %}
+                                                    {% set ieb_maths_papers = ieb_maths_papers.append(paper) %}
+                                                {% elif paper.stem == 'science' %}
+                                                    {% set ieb_science_papers = ieb_science_papers.append(paper) %}
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        {% if ieb_maths_papers %}
+                                            <li><a href="{{ url_for('users.papers_by_year', paper_type='ieb', stem='maths') }}">Mathematics Exam Papers (IEB)</a></li>
+                                        {% endif %}
+                                        {% if ieb_science_papers %}
+                                            <li><a href="{{ url_for('users.papers_by_year', paper_type='ieb', stem='science') }}">Physical Science Exam Papers (IEB)</a></li>
+                                        {% endif %}
+                                    </ul>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .with-vertical-line {
+        border-right: 1px solid #ccc;
+        /* Add a vertical line */
+    }
+</style>
+<br><br><br><br><br><br><br>
+{% endblock %}
