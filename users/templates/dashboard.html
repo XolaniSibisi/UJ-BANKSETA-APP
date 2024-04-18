@@ -149,9 +149,23 @@
                 {% endfor %}
             </tbody>
         </table>
-        <br>
     </div>
 </div>
+<nav aria-label="Page navigation example">
+    <ul class="pagination justify-content-center">
+      <li class="page-item {% if all_content.has_prev %} {% else %} disabled {% endif %}">
+        <a class="page-link" href="{{ url_for('users.dashboard', page=all_content.prev_num) }}" tabindex="-1" aria-disabled="true">Previous</a>
+      </li>
+      {% for num in all_content.iter_pages() %}
+      <li class="page-item {% if num == all_content.page %} active {% endif %}">
+        <a class="page-link" href="{{ url_for('users.dashboard', page=num) }}">{{ num }}</a>
+      </li>
+      {% endfor %}
+      <li class="page-item {% if all_content.has_next %} {% else %} disabled {% endif %}">
+        <a class="page-link" href="{{ url_for('users.dashboard', page=all_content.next_num) }}">Next</a>
+      </li>
+    </ul>
+</nav>
 
 <script>
     // Function to hide messages after a delay

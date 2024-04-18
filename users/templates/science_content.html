@@ -11,17 +11,11 @@
 {% block body %}
 <main class="my-5">
     <div class="container-fluid">
-        <div class="row justify-content-center">
-            <p class="mt-5 lead" style="color: black;">Welcome to Grade 12 Support, the best place to learn and prepare for
-                your final exams. We offer a wide range of content to help you prepare for your final exams. We have
-                content for Maths and Science covering every topic. We also offer live classes and tutorials to help you
-                understand the content better. We are here to help you succeed in your final exams.</p><br>
-        </div>
         <div class="row row-cols-1 row-cols-md-3 g-4">
             {% if content_data %}
                 {% for content_type, topics in content_data.items() %}
                     <div class="col">
-                        <div class="card mt-4">
+                        <div class="card mt-5">
                             <div class="card-body">
                                 <h5 class="card-title text-center">{{ content_type|upper }}</h5>
                                 {% for topic, content_list in topics.items() %}

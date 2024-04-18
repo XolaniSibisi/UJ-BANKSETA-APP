@@ -185,7 +185,7 @@ class CreateSlotForm(FlaskForm):
 class PostForm(FlaskForm):
     title = StringField("",validators=[DataRequired(), Length(10, 100)])
     content = TextAreaField('Content', validators=[DataRequired()])
-    attachment = FileField('Attachment', validators=[FileAllowed(['jpg', 'jpeg', 'png', 'svg'])])
+    image = FileField('Attachment', validators=[FileAllowed(['jpg', 'jpeg', 'png', 'svg'], 'Please upload images only.'), FileSize(max_size=2000000, message='Image size should not greater than 2MB.')])
     submit = SubmitField('Post')
     
 class CommentForm(FlaskForm):

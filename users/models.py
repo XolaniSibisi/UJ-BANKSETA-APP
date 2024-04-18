@@ -34,6 +34,7 @@ class User(db.Model, UserMixin):
     last_name = db.Column(db.String(25), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(128), nullable=False)
+    is_admin = db.Column(db.Boolean, default=False, nullable=False)
     role = db.Column(db.String(20), nullable=False)
     active = db.Column(db.Boolean, default=False, nullable=False)
     security_token = db.Column(db.String(138), default=unique_security_token)
@@ -55,7 +56,15 @@ class User(db.Model, UserMixin):
 
     def is_volunteer(self):
         return self.role == 'volunteer'
-
+    
+    def __init__(self, username, first_name, last_name, email, password, role):
+        self.username = username
+        self.first_name = first_name
+        self.last_name = last_name
+        self.email = email
+        self.set_password(password)
+        self.role = role
+        self.is_admin = (role == 'admin')
 
     def send_confirmation(self):
         """
@@ -329,7 +338,7 @@ class Post(db.Model):
     date_posted = db.Column(db.DateTime, nullable=False, default=datetime.now())
     content = db.Column(db.Text,nullable=False)
     views = db.Column(db.Integer, default=0)
-    attachment = db.Column(db.String(250), default='')
+    image = db.Column(db.String(250), default='')
     user_id = db.Column(db.Integer,db.ForeignKey("user.id"),nullable=False)
     comments = db.relationship("Comment", backref="post", passive_deletes=True, lazy=True)
     likes = db.relationship("Like", backref="post", passive_deletes=True, lazy=True)

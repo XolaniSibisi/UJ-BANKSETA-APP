@@ -7,13 +7,14 @@
     <div class="container-fluid">
       {{ render_messages() }}
         <div class="row justify-content-center">
-            <p class="mt-5 lead" style="color: black;">Welcome to Grade 12 Support, the best place to learn and prepare for
-                your final exams. We offer a wide range of content to help you prepare for your final exams. We have
-                content for Maths and Science covering every topic. We also offer live classes and tutorials to help you
-                understand the content better. We are here to help you succeed in your final exams.</p><br>
+            <p class="mt-5 lead" style="color: black;">
+              Welcome to the University of Johannesburg Matric Support Platform. Your Matric year is the most important of your academic life and we want to ensure that you have the best support to complement the efforts that you are making. You will find notes, guides, past year papers, worksheets, memos, explanatory videos, live classes, recordings of live classes, access to qualified tutors and links to high quality study material on this platform.  
+               
+              This platform is not simply a repository of supplementary material; it also directs you to other parts of the web that contain content that you may need.  We also have qualified tutors who have been vetted by ourselves who will deliver live classes on topics requested by students who can communicate with us via the Forum or the Contact Us page. We are continuously updating the site based on user data and feedback. Please take the time to share your feedback and participate in our surveys. 
+              </p><br>
         </div>
         <div>
-            <img src="{{ url_for('static', filename='assets/images/tutorials.jpg') }}" style="width: 100vw; height: 70vh;" class="img-fluid" alt="Grade 12">
+            <img src="{{ url_for('static', filename='assets/images/tutorials.jpg') }}" style="width: 100vw; height: 80vh;" class="img-fluid" alt="Grade 12">
         </div>
         <br>
         <div class="row row-cols-1 row-cols-md-3 g-4">
@@ -22,7 +23,7 @@
                 <a href="{{ url_for('users.access_content')}}"><img src="{{ url_for('static', filename='assets/images/subject_content.jpeg') }}" class="card-img-top" alt="..."></a>
                 <div class="card-body">
                   <a href="{{ url_for('users.access_content')}}"><h5 class="card-title">SUBJECT CONTENT</h5></a>
-                  <p class="card-text">This is a longer card with supporting text below as a natural lead-in to additional content. This content is a little bit longer.</p>
+                  <p class="card-text">You will find notes, study guides and links to videos here. The material is organized as per the topics in the CAPs curriculum.  Some content is available for download whilst others are available as links to selected sites.  Currently we only offer content for grade 12 Maths and Physical Science. We intend to expand the scope to other matric subjects in the near future.</p>
                 </div>
               </div>
             </div>
@@ -31,16 +32,16 @@
                 <img src="{{ url_for('static', filename='assets/images/survey.jpg') }}" height="238" class="card-img-top" alt="...">
                 <div class="card-body">
                   <h5 class="card-title">TAKE A SURVEY</h5>
-                  <p class="card-text">This is a short card.</p>
+                  <p class="card-text">This site is intended to be responsive to the needs of its users. As professional researchers we believe the best way to understand your needs is to ask you. Please take the time to complete surveys that you may find here. Ultimately you are intended to be the biggest beneficiary of this sacrifice of your time.</p>
                 </div>
               </div>
             </div>
             <div class="col">
               <div class="card h-100">
-                <a href="{{ url_for('users.view_papers') }}"><img src="{{ url_for('static', filename='assets/images/practice.jpg') }}" height="238" class="card-img-top" alt="..."></a> 
+                <a href="{{ url_for('users.practice') }}"><img src="{{ url_for('static', filename='assets/images/practice.jpg') }}" height="238" class="card-img-top" alt="..."></a> 
                 <div class="card-body">
-                  <a href="{{ url_for('users.view_papers')}}"><h5 class="card-title">PRACTICE</h5></a> 
-                  <p class="card-text">This is a longer card with supporting text below as a natural lead-in to additional content.</p>
+                  <a href="{{ url_for('users.practice')}}"><h5 class="card-title">PRACTICE</h5></a> 
+                  <p class="card-text">Here you will find worksheets, problems and solutions. The content is arranged as per the CAPs curriculum. You are advised to master these problems before progressing to the past year papers.</p>
                 </div>
               </div>
             </div>
@@ -48,8 +49,8 @@
               <div class="card h-100">
                 <a href="{{ url_for('users.live_classes')}}"><img src="{{ url_for('static', filename='assets/images/live.jpg') }}" height="238" class="card-img-top" alt="..."></a> 
                 <div class="card-body">
-                  <a href="{{ url_for('users.live_classes')}}"><h5 class="card-title">LIVE CLASSES</h5></a> 
-                  <p class="card-text">This is a longer card with supporting text below as a natural lead-in to additional content. This content is a little bit longer.</p>
+                  <a href="{{ url_for('users.live_classes')}}"><h5 class="card-title">VIRTUAL CLASSES</h5></a> 
+                  <p class="card-text">Qualified volunteers, who are vetted by us, provide live classes on topics requested by members of our community. You will need to install MS Teams on your device and join using the link on the scheduled date and time. The classes are interactive and you can ask questions.</p>
                 </div>
               </div>
             </div>
@@ -58,16 +59,16 @@
                 <a href="{{ url_for('users.papers_by_year')}}"><img src="{{ url_for('static', filename='assets/images/past-papers.png') }}" height="238" class="card-img-top" alt="..."></a>
                 <div class="card-body">
                   <a href="{{ url_for('users.papers_by_year')}}"><h5 class="card-title">PAST YEAR PAPERS</h5></a>
-                    <p class="card-text">This is a short card.</p>
+                    <p class="card-text">A complete repository of the past 20 years of NSC Matric papers and memos are available here.</p>
                 </div>
               </div>
           </div>
           <div class="col">
             <div class="card h-100">
-              <a href="{{ url_for('users.forum')}}"><img src="{{ url_for('static', filename='assets/images/forum.png') }}" height="238" class="card-img-top" alt="..."></a> 
+              <a href="{{ url_for('users.forum')}}"><img src="{{ url_for('static', filename='assets/images/forum.jpeg') }}" height="238" class="card-img-top" alt="..."></a> 
               <div class="card-body">
                 <a href="{{ url_for('users.forum') }}"><h5 class="card-title">FORUM</h5></a> 
-                <p class="card-text">This is a longer card with supporting text below as a natural lead-in to additional content.</p>
+                <p class="card-text">The forum is the medium through which our community engages and interacts. Users are encouraged to share problems as well as solutions to problems posted on the site. The objective is to ensure that every learner is able to access support for any maths and science problem they may have.  Please use the forum responsibly; it is moderated by our admin to ensure a safe space for all users.</p>
               </div>
             </div>
           </div>

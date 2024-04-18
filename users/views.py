@@ -5,11 +5,12 @@ from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 from flask import send_from_directory
 from flask import current_app
+import imghdr
+import uuid
 from sqlalchemy import or_, func, desc
 from collections import Counter
 from sqlalchemy.exc import IntegrityError
 import pytz
-import logging
 from flask_login import (
     current_user,
     login_required,
@@ -66,8 +67,6 @@ users = Blueprint('users', __name__, template_folder='templates')
 
 CORS(users)
 
-logging.basicConfig(level=logging.DEBUG)
-
 @users.route('/register', methods=['GET', 'POST'], strict_slashes=False)
 def register():
     form = RegisterForm()
@@ -91,8 +90,6 @@ def register():
             id_copy_destination = os.path.join(
                 current_app.config['UPLOAD_FOLDER_SUPPORTING_DOCUMENTS'], id_copy_filename)
             os.makedirs(os.path.dirname(id_copy_destination), exist_ok=True)
-            # Debugging statement
-            print("ID Copy Destination:", id_copy_destination)
             form.id_copy.data.save(id_copy_destination)
 
         if form.certificates.data:
@@ -102,8 +99,6 @@ def register():
                 current_app.config['UPLOAD_FOLDER_SUPPORTING_DOCUMENTS'], certificates_filename)
             os.makedirs(os.path.dirname(
                 certificates_destination), exist_ok=True)
-            # Debugging statement
-            print("Certificates Destination:", certificates_destination)
             form.certificates.data.save(certificates_destination)
 
         try:
@@ -138,8 +133,6 @@ def register():
     return render_template('register.html', form=form)
 
 # Route for verifying volunteer applications
-
-
 @users.route('/verification', methods=['GET', 'POST'], strict_slashes=False)
 @login_required
 def verification():
@@ -154,6 +147,7 @@ def verification():
                 volunteer = User.query.get(volunteer_id)
                 if volunteer:
                     volunteer.active = True
+                    volunteer.security_token = None
                     db.session.commit()
                     # Send application accepted email
                     send_application_accepted_email(volunteer.email)
@@ -173,8 +167,6 @@ def verification():
         return redirect(url_for('users.home'))
 
 # Route for rejecting volunteer applications
-
-
 @users.route('/rejection', methods=['POST'])
 @login_required
 def rejection():
@@ -503,7 +495,6 @@ def profile():
 
     return render_template('profile.html', form=form, profile=profile, taken_teaching_slots=taken_teaching_slots, taken_attending_slots=taken_attending_slots, get_notification_count=get_notification_count)
 
-
 @users.route('/admin/profile', methods=['GET'])
 @login_required
 def admin_profile():
@@ -529,9 +520,11 @@ def admin_profile():
         profile = Profile.query.filter_by(user_id=volunteer.id).first()
         volunteer_profiles[volunteer] = profile
 
+    selected_role = request.args.get('role', '')  # Get selected role from query parameter
+    
     return render_template('admin_profile.html', students=students, volunteers=volunteers,
-                           student_profiles=student_profiles, volunteer_profiles=volunteer_profiles, form=form)
-
+                           student_profiles=student_profiles, volunteer_profiles=volunteer_profiles, 
+                           selected_role=selected_role, form=form)
 
 @users.route('/view_user/<user_id>', methods=['GET'])
 @login_required
@@ -745,31 +738,37 @@ def format_time_difference(delta):
             return f"{hours} hours ago"
     else:
         return f"{delta.days} day(s) ago"
-
+    
+def allowed_image(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ['png', 'jpg', 'jpeg', 'svg']
 
 @users.route("/post/new", methods=['POST', 'GET'])
 @login_required
 def new_post():
     form = PostForm()
     if form.validate_on_submit():
+        if form.image.data:
+            image_file = form.image.data
+            if allowed_image(image_file.filename):
+                image_filename = secure_filename(image_file.filename)
+                image_path = os.path.join(current_app.config['UPLOAD_FOLDER_PROBLEM_IMAGES'], image_filename)
+                
+                # Create directory if it doesn't exist
+                os.makedirs(os.path.dirname(image_path), exist_ok=True)
+                
+                image_file.save(image_path)
+            else:
+                flash('Invalid image file format!', 'error')
+                return redirect(url_for('users.new_post'))  # Redirect back to the form
 
-        attachment_filename = None
-        if form.attachment.data:
-            attachment_filename = secure_filename(
-                form.attachment.data.filename)
-            uploads_folder = current_app.config['UPLOAD_FOLDER_LOCAL_FILES']
-            attachment_path = os.path.join(uploads_folder, attachment_filename)
-            form.attachment.data.save(attachment_path)
-
-        post = Post(title=form.title.data, content=form.content.data,
-                    author=current_user, attachment=attachment_filename)
+        post = Post(title=form.title.data, content=form.content.data, image=image_filename,
+                    author=current_user)
         db.session.add(post)
         db.session.commit()
 
-        flash('Your post has been created !', 'success')
+        flash('Your post has been created!', 'success')
         return redirect(url_for('users.forum'))
-    return render_template('create_post.html', title="Create Post", form=form, legend='Update Post')
-
+    return render_template('create_post.html', title="Create Post", form=form, legend='Create Post')
 
 @users.route("/post/<int:post_id>", methods=['GET', 'POST'])
 @login_required
@@ -851,7 +850,7 @@ def update_post(post_id):
 @login_required
 def delete_post(post_id):
     post = Post.query.get_or_404(post_id)
-    if post.author != current_user:
+    if not current_user.is_admin and post.author != current_user:
         abort(403)
     db.session.delete(post)
     db.session.commit()
@@ -864,7 +863,7 @@ def delete_post(post_id):
 def delete_comment(comment_id):
     comment = Comment.query.get_or_404(comment_id)
     post_id = comment.post_id
-    if comment.author != current_user:
+    if not current_user.is_admin and comment.author != current_user:
         abort(403)
     db.session.delete(comment)
     db.session.commit()
@@ -1129,6 +1128,8 @@ def maths_content():
     # Organize the content into a dictionary structure based on content_type and topic
     content_data = {}
     for content in maths_content:
+        if content.content_type == 'additional_problem' or content.content_type == 'worksheet':
+            continue  # Skip content related to additional_problem and worksheet
         if content.content_type not in content_data:
             content_data[content.content_type] = {}
         if content.topic not in content_data[content.content_type]:
@@ -1140,7 +1141,6 @@ def maths_content():
 
     return render_template('maths_content.html', content_data=content_data, form=form)
 
-
 @users.route('/science_content', methods=['GET'])
 @login_required
 def science_content():
@@ -1151,6 +1151,8 @@ def science_content():
     # Organize the content into a dictionary structure based on content_type and topic
     content_data = {}
     for content in science_content:
+        if content.content_type == 'additional_problem' or content.content_type == 'worksheet':
+            continue  # Skip content related to additional_problem and worksheet
         if content.content_type not in content_data:
             content_data[content.content_type] = {}
         if content.topic not in content_data[content.content_type]:
@@ -1162,6 +1164,26 @@ def science_content():
 
     return render_template('science_content.html', content_data=content_data, form=form)
 
+@users.route('/practice', methods=['GET'])
+@login_required
+def practice():
+    # Fetch practice content from the database
+    form = ContactForm()
+    practice_content = Content.query.filter((Content.content_type == 'worksheet') | (Content.content_type == 'additional_problem')).all()
+    
+    # Organize the content into a dictionary structure based on content_type and topic
+    content_data = {}
+    for content in practice_content:
+        if content.content_type not in content_data:
+            content_data[content.content_type] = {}
+        if content.topic not in content_data[content.content_type]:
+            content_data[content.content_type][content.topic] = []
+        content_data[content.content_type][content.topic].append(content)
+        
+    if not content_data:  # If content_data is empty or None
+        return render_template('no_content.html', form=form)
+    
+    return render_template('practice.html', content_data=content_data, form=form)
 
 def save_file_to_server(file):
     """
@@ -1181,8 +1203,6 @@ def save_file_to_server(file):
         return None
 
 # Define a route to handle the upload_content.html template
-
-
 @users.route('/upload_content', methods=['GET', 'POST'])
 @login_required
 def upload_content():
@@ -1249,30 +1269,23 @@ def upload_content():
     return render_template('upload_content.html', form=form, maths_catalogue=maths_catalogue, physical_science_catalogue=physical_science_catalogue)
 
 # Define a route to handle the no_content.html template
-
-
 @users.route('/no_content', methods=['GET'])
 @login_required
 def no_content():
     return render_template('no_content.html')
 
 # favicon route
-
-
 @users.route("/favicon.ico")
 def favicon():
     return "", 200
 
 # Define a function to convert YouTube watch URLs to embed URLs
-
-
 def convert_to_embed_link(link):
     parsed_url = urlparse(link)
     video_id = parse_qs(parsed_url.query).get('v')
     if video_id:
         return f"https://www.youtube.com/embed/{video_id[0]}"
     return None
-
 
 @users.route('/content_files/<file_name>', methods=['GET'])
 def serve_content_file(file_name):
@@ -1289,8 +1302,6 @@ def serve_content_file(file_name):
         abort(404)
 
 # Define the view_content endpoint
-
-
 @users.route('/view_content/<content_id>')
 @login_required
 def view_content(content_id):
@@ -1314,7 +1325,6 @@ def view_content(content_id):
         flash('Content not found', 'error')
         return redirect(url_for('users.home', form=form))
 
-
 @users.route('/uploads/<path:filename>', methods=['GET'])
 @login_required
 def serve_uploaded_file(filename):
@@ -1322,8 +1332,6 @@ def serve_uploaded_file(filename):
     return send_from_directory(uploads, filename)
 
 # Define the download_content endpoint
-
-
 @users.route('/download_content/<content_id>', methods=['GET'])
 @login_required
 def download_content(content_id):
@@ -1380,7 +1388,9 @@ def download_content(content_id):
 def dashboard():
     form = ContactForm()
     # Fetch all content from the database
-    all_content = Content.query.all()
+    page = request.args.get('page', 1, type=int)
+    per_page = 5
+    all_content = Content.query.paginate(page=page, per_page=per_page)
 
     # Get the count of students
     num_students = User.query.filter_by(role='student').count()
@@ -1448,8 +1458,6 @@ def dashboard():
                            num_slots_attendance=num_slots_attendance, all_content=all_content, average_taken_slots=average_taken_slots, most_popular_attended_subtopic=most_popular_attended_subtopic, form=form)
 
 # Route to edit content
-
-
 @users.route('/edit_content/<content_id>', methods=['GET'])
 @login_required
 def edit_content(content_id):
@@ -1481,8 +1489,6 @@ def update_content():
     return redirect(url_for('users.dashboard'))
 
 # Route to delete content
-
-
 @users.route('/delete_content/<content_id>', methods=['GET', 'POST'])
 @login_required
 def delete_content(content_id):
@@ -1498,8 +1504,6 @@ def delete_content(content_id):
     return redirect(url_for('users.dashboard'))
 
 # Route to create a teaching slot
-
-
 @users.route('/create_slot', methods=['GET', 'POST'])
 @login_required
 def create_slot():
@@ -1568,7 +1572,6 @@ def create_slot():
 
     return render_template('create_slot.html', form=form, maths_catalogue=maths_catalogue, physical_science_catalogue=physical_science_catalogue, )
 
-
 @users.route('/delete_slot/<slot_id>', methods=['POST'], strict_slashes=False)
 @login_required
 def delete_slot(slot_id):
@@ -1581,7 +1584,6 @@ def delete_slot(slot_id):
         flash('Teaching slot deleted successfully.', 'success')
     return redirect(url_for('users.dashboard'))
 
-
 @users.route('/edit_slot/<slot_id>', methods=['GET'], strict_slashes=False)
 @login_required
 def edit_slot(slot_id):
@@ -1590,7 +1592,6 @@ def edit_slot(slot_id):
     slot = Slots.query.get_or_404(slot_id)
 
     return render_template('edit_slot.html', slot=slot, form=form)
-
 
 @users.route('/edit_slot', methods=['POST'], strict_slashes=False)
 @login_required
@@ -1629,7 +1630,6 @@ def live_classes():
     # Retrieve all slots
     slots = Slots.query.all()
     return render_template('live_classes.html', slots=slots, form=form)
-
 
 @users.route('/attend_event/<slot_id>', methods=['GET'], strict_slashes=False)
 @login_required

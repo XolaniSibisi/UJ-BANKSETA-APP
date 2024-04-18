@@ -32,8 +32,16 @@
                 class="text-black" href="{{url_for('users.user_posts',username=post.author.username)}}">{{
                 post.author.username }}</a></p>
           </div>
-          <p class="text-sm">{{post.content}}</p>
+          <p class="text-sm">{{ post.content }}</p>
         </div>
+        {% if post.image %}
+        <div class="row align-items-center">
+          <div class="col-md-8 mb-3 mb-sm-0 text-center">
+            <img src="{{ url_for('static', filename='assets/problems/' + post.image) }}" alt="Post Image"
+              class="img-fluid" width="275" height="183" data-enlargeable width="100" style="cursor: zoom-in">
+          </div>
+        </div>
+        {% endif %}
         <div class="col-md-3 op-7">
           <div class="row text-center op-7">
             <div class="col px-1">
@@ -45,13 +53,13 @@
             </div>
             <div class="col px-1"> <i class="ion-ios-chatboxes-outline icon-1x"></i> <span class="d-block text-sm">{{
                 post.comments|length }}</span> </div>
-            <div id="viewCount_{{ post.id }}" class="col px-1"><i class="ion-ios-eye-outline icon-1x"></i>
-              <span id="viewCountValue_{{ post.id }}" class="d-block text-sm">{{ post.views }}</span>
-            </div>
+            <div id="viewCount_{{ post.id }}" class="col px-1"><i class="ion-ios-eye-outline icon-1x"></i> <span
+                id="viewCountValue_{{ post.id }}" class="d-block text-sm">{{ post.views }}</span></div>
           </div>
         </div>
       </div>
       {% endfor %}
+
       {% else %}
       <!-- Display message when no posts are found -->
       <div class="alert alert-warning" role="alert">
@@ -62,7 +70,8 @@
         <nav aria-label="Page navigation example">
           <ul class="pagination justify-content-center">
             <li class="page-item {% if not posts.has_prev %} disabled {% endif %}">
-              <a class="page-link" href="{{ url_for('users.forum', page=posts.prev_num) }}" tabindex="-1" aria-disabled="true">Previous</a>
+              <a class="page-link" href="{{ url_for('users.forum', page=posts.prev_num) }}" tabindex="-1"
+                aria-disabled="true">Previous</a>
             </li>
             {% for page_num in posts.iter_pages() %}
             <li class="page-item {% if page_num == posts.page %} active {% endif %}">
@@ -74,7 +83,7 @@
             </li>
           </ul>
         </nav>
-      </div>      
+      </div>
     </div>
     <!-- Sidebar content -->
     <div class="col-lg-3">
@@ -94,12 +103,15 @@
           <h4 class="px-3 py-2 op-5 m-0 text-center">Active Topics</h4>
           <hr class="m-0">
           {% for post in active_topics %}
-              <h5 style="font-size: 15px;">
-                  <a class="article-title" href="{{ url_for('users.post', post_id=post.id) }}" onclick="incrementViewCount({{ post.id }})">{{ post.title }}</a>
-              </h5>
-              <p class="text-sm"><span class="op-6">Posted</span> {{ format_time_difference(current_date-post.date_posted) }} <span class="op-6">by</span> <a class="text-black" href="{{ url_for('users.user_posts', username=post.author.username) }}">{{ post.author.username }}</a></p>
+          <h5 style="font-size: 15px;">
+            <a class="article-title" href="{{ url_for('users.post', post_id=post.id) }}"
+              onclick="incrementViewCount({{ post.id }})">{{ post.title }}</a>
+          </h5>
+          <p class="text-sm"><span class="op-6">Posted</span> {{ format_time_difference(current_date-post.date_posted)
+            }} <span class="op-6">by</span> <a class="text-black"
+              href="{{ url_for('users.user_posts', username=post.author.username) }}">{{ post.author.username }}</a></p>
           {% endfor %}
-      </div>      
+        </div>
         <div class="bg-white text-sm sticky-top stats-block">
           <h4 class="px-3 py-1 op-5 m-0 roboto-bold text-center">Stats</h4>
           <hr class="my-0">
@@ -110,8 +122,8 @@
                 href="#">{{all_post}}</a> Posts </div>
           </div>
           <div class="row d-flex flex-row op-7">
-            <div class="col-sm-6 flex-ew text-center border-right mx-0" style="font-size: 15px;"> <a class="d-block lead font-weight-bold"
-                href="#">{{all_users_count}}</a> Members </div>
+            <div class="col-sm-6 flex-ew text-center border-right mx-0" style="font-size: 15px;"> <a
+                class="d-block lead font-weight-bold" href="#">{{all_users_count}}</a> Members </div>
             <div class="col-sm-6 flex-ew text-center mx-0"> <a class="d-block lead font-weight-bold"
                 href="#">{{new_member}}</a> Newest Member </div>
           </div>
@@ -121,6 +133,37 @@
   </div>
 </div>
 <br><br><br>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script>
+  $('img[data-enlargeable]').addClass('img-enlargeable').click(function() {
+  var src = $(this).attr('src');
+  var modal;
+
+  function removeModal() {
+    modal.remove();
+    $('body').off('keyup.modal-close');
+  }
+  modal = $('<div>').css({
+    background: 'RGBA(0,0,0,.5) url(' + src + ') no-repeat center',
+    backgroundSize: 'contain',
+    width: '100%',
+    height: '100%',
+    position: 'fixed',
+    zIndex: '10000',
+    top: '0',
+    left: '0',
+    cursor: 'zoom-out'
+  }).click(function() {
+    removeModal();
+  }).appendTo('body');
+  //handling ESC
+  $('body').on('keyup.modal-close', function(e) {
+    if (e.key === 'Escape') {
+      removeModal();
+    }
+  });
+});
+</script>
 
 <script>
   async function like(postId) {

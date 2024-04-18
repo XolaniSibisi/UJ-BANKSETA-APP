@@ -21,10 +21,15 @@
         <a class="mr-2" href="{{url_for('users.user_posts',username=post.author.username)}}">{{ post.author.username
           }}</a>
         <small class="text-muted">{{ format_time_difference(current_date - post.date_posted) }}</small>
-        {% if post.author ==current_user %}
+        {% if post.author == current_user %}
         <div>
           <a class="btn btn-primary btn-sm mt-1 mb-1"
             href="{{ url_for('users.update_post',post_id=post.id)}}">Update</a>
+          <button type="button" class="btn btn-danger btn-sm m-1" data-toggle="modal"
+            data-target="#deleteModal">Delete</button>
+        </div>
+        {% elif current_user.is_authenticated and current_user.is_admin %}
+        <div>
           <button type="button" class="btn btn-danger btn-sm m-1" data-toggle="modal"
             data-target="#deleteModal">Delete</button>
         </div>
@@ -67,6 +72,11 @@
               <div>
                   <a class="btn btn-primary btn-sm mt-1 mb-1"
                       href="{{ url_for('users.update_comment', post_id=post.id, comment_id=comment.id)}}">Update</a>
+                  <button type="button" class="btn btn-danger btn-sm m-1" data-toggle="modal"
+                      data-target="#deleteCommentModal-{{ comment.id }}">Delete</button>
+              </div>
+              {% elif current_user.is_authenticated and current_user.is_admin %}
+              <div>
                   <button type="button" class="btn btn-danger btn-sm m-1" data-toggle="modal"
                       data-target="#deleteCommentModal-{{ comment.id }}">Delete</button>
               </div>

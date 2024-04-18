@@ -8,7 +8,7 @@
     <h1 class="text-center mt-5" style="padding-top: 2.0rem;">Verification</h1>
     <div class="row justify-content-center mt-4">
         {{ render_messages() }}
-        <div class="col-lg-8">
+        <div class="col-lg-10">
                 <h2 class="mb-4">List of Volunteers to Verify</h2>
                 <table class="table">
                     <thead>
@@ -16,7 +16,6 @@
                             <th>Username</th>
                             <th>Email</th>
                             <th>Role</th>
-                            <th>Documents</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -26,14 +25,6 @@
                                 <td>{{ volunteer.username }}</td>
                                 <td>{{ volunteer.email }}</td>
                                 <td>{{ volunteer.role }}</td>
-                                <td>
-                                    {% if volunteer.id_copy_filename %}
-                                    <a href="{{ url_for('static', filename='assets/supporting_documents/' ~ volunteer.id_copy_filename) }}" target="_blank">ID Copy</a><br>
-                                    {% endif %}
-                                    {% if volunteer.certificates_filename %}
-                                    <a href="{{ url_for('static', filename='assets/supporting_documents/' ~ volunteer.certificates_filename) }}" target="_blank">Certificates</a><br>
-                                    {% endif %}
-                                </td>
                                 <td>
                                     <form method="post" action="{{ url_for('users.verification') }}" style="display: inline;">
                                         <input type="hidden" name="volunteer_id" value="{{ volunteer.id }}">
@@ -53,7 +44,7 @@
         </div>
     </div>
 </div>
-<br><br><br><br>
+<br><br><br><br><br><br><br>
 
 <script>
     function hideMessages() {

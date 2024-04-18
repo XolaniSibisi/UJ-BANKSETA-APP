@@ -6,6 +6,17 @@
 <div class="container my-5">
     <h1 class="mt-5 mb-4 text-center" style="padding-top: 2.0rem;">Registered Users</h1>
     {{ render_messages() }}
+
+    <!-- Role filter dropdown -->
+    <div class="mb-3">
+        <label for="roleFilter" class="form-label">Filter by Role:</label>
+        <select class="form-select" id="roleFilter">
+            <option value="" {% if selected_role == "" %}selected{% endif %}>All</option>
+            <option value="student" {% if selected_role == "student" %}selected{% endif %}>Student</option>
+            <option value="volunteer" {% if selected_role == "volunteer" %}selected{% endif %}>Volunteer</option>
+        </select>
+    </div>
+
     <div class="table-responsive">
         <table class="table table-striped table-bordered table-hover mt-4">
             <thead>
@@ -19,82 +30,103 @@
             </thead>
             <tbody>
                 {% for student in students %}
-                <tr>
-                <td style="display: flex; justify-content: center; align-items: center;">
-                    {% if student_profiles[student] and student_profiles[student].avatar %}
-                    <img class="rounded-circle" style="width: 40px;height: 40px;"
-                        src="{{ url_for('static', filename='assets/profile/' + student_profiles[student].avatar) }}"
-                        alt="Avatar">
-                    {% else %}
-                    <img class="rounded-circle" style="width: 40px;height: 40px;"
-                        src="{{ url_for('static', filename='assets/images/default_avator.jpg') }}" alt="Avatar">
+                    {% if selected_role == "" or student.role == selected_role %}
+                        <tr>
+                            <td style="display: flex; justify-content: center; align-items: center;">
+                                {% if student_profiles[student] and student_profiles[student].avatar %}
+                                    <img class="rounded-circle" style="width: 40px;height: 40px;"
+                                        src="{{ url_for('static', filename='assets/profile/' + student_profiles[student].avatar) }}"
+                                        alt="Avatar">
+                                {% else %}
+                                    <img class="rounded-circle" style="width: 40px;height: 40px;"
+                                        src="{{ url_for('static', filename='assets/images/default_avator.jpg') }}"
+                                        alt="Avatar">
+                                {% endif %}
+                            </td>
+                            <td class="text-center">{{ student.username }}</td>
+                            <td class="text-center">{{ student.email }}</td>
+                            <td class="text-center">{{ student.role }}</td>
+                            <td class="align-middle">
+                                <div style="display: flex; justify-content: center;">
+                                    <a href="{{ url_for('users.view_user', user_id=student.id) }}"
+                                        class="btn btn-primary" style="margin-right: 5px;"><i
+                                            class="fa fa-eye"></i></a>
+                                    <form action="{{ url_for('users.delete_user', user_id=student.id) }}" method="post"
+                                        style="margin-left: 5px; display: inline;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="student_id" value="{{ student.id }}">
+                                        <button type="submit" class="btn btn-danger"
+                                            onclick="return confirm('Are you sure you want to delete this user?')"><i
+                                                class="fa fa-trash"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
                     {% endif %}
-                </td>
-                <td class="text-center">{{ student.username }}</td>
-                <td class="text-center">{{ student.email }}</td>
-                <td class="text-center">{{ student.role }}</td>
-                <td class="align-middle">
-                    <div style="display: flex; justify-content: center;">
-                        <a href="{{ url_for('users.view_user', user_id=student.id) }}" class="btn btn-primary"
-                            style="margin-right: 5px;"><i class="fa fa-eye"></i></a>
-                        <form action="{{ url_for('users.delete_user', user_id=student.id) }}" method="post"
-                            style="margin-left: 5px; display: inline;">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="student_id" value="{{ student.id }}">
-                            <button type="submit" class="btn btn-danger"
-                                onclick="return confirm('Are you sure you want to delete this user?')"><i class="fa fa-trash"></i></button>
-                        </form>
-                    </div>
-                </td>
-                </tr>
                 {% endfor %}
                 {% for volunteer in volunteers %}
-                <tr>
-                    <td style="display: flex; justify-content: center; align-items: center;">
-                        {% if volunteer_profiles[volunteer] and volunteer_profiles[volunteer].avatar %}
-                        <img class="rounded-circle" style="width: 40px;height: 40px;"
-                            src="{{ url_for('static', filename='assets/profile/'+ volunteer_profiles[volunteer].avatar) }}" alt="Avatar">
-                        {% else %}
-                        <img class="rounded-circle" style="width: 40px;height: 40px;"
-                            src="{{ url_for('static', filename='assets/images/default_avator.jpg') }}" , alt="Avatar">
-                        {% endif %}
-                    </td>
-                    <td class="text-center">{{ volunteer.username }}</td>
-                    <td class="text-center">{{ volunteer.email }}</td>
-                    <td class="text-center">{{ volunteer.role }}</td>
-                    <td class="align-middle">
-                        <div style="display: flex; justify-content: center;">
-                            <a href="{{ url_for('users.view_user', user_id=volunteer.id) }}" class="btn btn-primary"
-                                style="margin-right: 5px;"><i class="fa fa-eye"></i></a>
-                            <form action="{{ url_for('users.delete_user', user_id=volunteer.id) }}" method="post"
-                                style="margin-left: 5px; display: inline;">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <input type="hidden" name="volunteer" value="{{ volunteer.id }}">
-                                <button type="submit" class="btn btn-danger"
-                                    onclick="return confirm('Are you sure you want to delete this user?')"><i class="fa fa-trash"></i></button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
+                    {% if selected_role == "" or volunteer.role == selected_role %}
+                        <tr>
+                            <td style="display: flex; justify-content: center; align-items: center;">
+                                {% if volunteer_profiles[volunteer] and volunteer_profiles[volunteer].avatar %}
+                                    <img class="rounded-circle" style="width: 40px;height: 40px;"
+                                        src="{{ url_for('static', filename='assets/profile/'+ volunteer_profiles[volunteer].avatar) }}" alt="Avatar">
+                                {% else %}
+                                    <img class="rounded-circle" style="width: 40px;height: 40px;"
+                                        src="{{ url_for('static', filename='assets/images/default_avator.jpg') }}" , alt="Avatar">
+                                {% endif %}
+                            </td>
+                            <td class="text-center">{{ volunteer.username }}</td>
+                            <td class="text-center">{{ volunteer.email }}</td>
+                            <td class="text-center">{{ volunteer.role }}</td>
+                            <td class="align-middle">
+                                <div style="display: flex; justify-content: center;">
+                                    <a href="{{ url_for('users.view_user', user_id=volunteer.id) }}" class="btn btn-primary"
+                                        style="margin-right: 5px;"><i class="fa fa-eye"></i></a>
+                                    <form action="{{ url_for('users.delete_user', user_id=volunteer.id) }}" method="post"
+                                        style="margin-left: 5px; display: inline;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="volunteer" value="{{ volunteer.id }}">
+                                        <button type="submit" class="btn btn-danger"
+                                            onclick="return confirm('Are you sure you want to delete this user?')"><i class="fa fa-trash"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
                 {% endfor %}
+                {% if students|length == 0 and volunteers|length == 0 %}
+                    <tr>
+                        <td colspan="5" class="text-center">No users found.</td>
+                    </tr>
+                {% endif %}
             </tbody>
         </table>
     </div>
 </div>
+
+<script>
+    // Function to redirect with selected role
+    document.getElementById('roleFilter').addEventListener('change', function () {
+        var selectedRole = this.value.trim();
+        window.location.href = "{{ url_for('users.admin_profile') }}?role=" + selectedRole;
+    });
+</script>
+
 <script>
     // Function to hide messages after a delay
     function hideMessages() {
-        var messagesElements = document.querySelectorAll('.alert');
-        if (messagesElements) {
-            setTimeout(function () {
-                messagesElements.forEach(function (element) {
-                    element.style.display = 'none';
-                });
-            }, 3000);  // 5000 milliseconds (5 seconds)
-        }
+      var messagesElements = document.querySelectorAll('.alert');
+      if (messagesElements) {
+        setTimeout(function () {
+          messagesElements.forEach(function (element) {
+            element.style.display = 'none';
+          });
+        }, 3000);  // 5000 milliseconds (5 seconds)
+      }
     }
-
+  
     // Call the function when the page loads
     window.onload = hideMessages;
-</script>
+  </script>
 {% endblock %}
