@@ -29,17 +29,23 @@
               <div style="display: flex; flex-direction: column;">
                 {{ render_field(form.email, placeholder="Enter your email") }}
                 <small id="emailHelp" class="form-text text-muted" style="margin-top: -20px;">We'll never share your email with anyone else.</small>
-            </div>
-            <br>            
+              </div>
+              <br>            
               {{ render_field(form.role, class="form-select", label="Choose your role") }}
               
               <!-- Conditional fields for volunteer -->
-              <div id="id-copy-field" class="mb-3" style="display: none;">
+              <div id="id-copy-field" class="mb-3" style="display: {{ 'block' if form.role.data == 'volunteer' else 'none' }}">
                 {{ render_field(form.id_copy) }}
-            </div>
-            <div id="certificates-field" class="mb-3" style="display: none;">
+                {% for error in form.id_copy.errors %}
+                  <div class="invalid-feedback d-block">{{ error }}</div>
+                {% endfor %}
+              </div>
+              <div id="certificates-field" class="mb-3" style="display: {{ 'block' if form.role.data == 'volunteer' else 'none' }}">
                 {{ render_field(form.certificates) }}
-            </div>            
+                {% for error in form.certificates.errors %}
+                  <div class="invalid-feedback d-block">{{ error }}</div>
+                {% endfor %}
+              </div>            
               {{ render_field(form.password, placeholder="Choose your password") }}
               {{ render_field(form.remember) }}
               {{ render_field(form.submit, class="w-100") }}
@@ -57,41 +63,53 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-      const roleField = document.querySelector('.form-select');
-      const idCopyField = document.getElementById('id-copy-field');
-      const certificatesField = document.getElementById('certificates-field');
+    const roleField = document.querySelector('.form-select');
+    const idCopyField = document.getElementById('id-copy-field');
+    const certificatesField = document.getElementById('certificates-field');
 
-      // Function to toggle visibility of additional fields for volunteers
-      function toggleVolunteerFields() {
-          if (roleField.value === 'volunteer') {
-              idCopyField.style.display = 'block';
-              certificatesField.style.display = 'block';
-          } else {
-              idCopyField.style.display = 'none';
-              certificatesField.style.display = 'none';
-          }
+    // Function to toggle visibility of additional fields for volunteers
+    function toggleVolunteerFields() {
+      if (roleField.value === 'volunteer') {
+        idCopyField.style.display = 'block';
+        certificatesField.style.display = 'block';
+      } else {
+        idCopyField.style.display = 'none';
+        certificatesField.style.display = 'none';
       }
+    }
 
-      // Call the function initially
-      toggleVolunteerFields();
+    // Call the function initially
+    toggleVolunteerFields();
 
-      // Add event listener to role field
-      roleField.addEventListener('change', toggleVolunteerFields);
+    // Add event listener to role field
+    roleField.addEventListener('change', toggleVolunteerFields);
+
+    // Function to focus on the first visible input field
+    function focusOnFirstVisibleInput() {
+      const visibleInputs = document.querySelectorAll(
+        'input:not([type="hidden"]):not([style*="display:none"]), select:not([style*="display:none"]), textarea:not([style*="display:none"])'
+      );
+      if (visibleInputs.length > 0) {
+        visibleInputs[0].focus();
+      }
+    }
+
+    // Call the function to focus on the first visible input field
+    focusOnFirstVisibleInput();
   });
 </script>
-
 
 <script>
   // Function to hide messages after a delay
   function hideMessages() {
-      var messagesElements = document.querySelectorAll('.alert');
-      if (messagesElements) {
-          setTimeout(function() {
-              messagesElements.forEach(function(element) {
-                  element.style.display = 'none';
-              });
-          }, 3000);  // 5000 milliseconds (5 seconds)
-      }
+    var messagesElements = document.querySelectorAll('.alert');
+    if (messagesElements) {
+      setTimeout(function() {
+        messagesElements.forEach(function(element) {
+          element.style.display = 'none';
+        });
+      }, 3000);  // 5000 milliseconds (5 seconds)
+    }
   }
 
   // Call the function when the page loads

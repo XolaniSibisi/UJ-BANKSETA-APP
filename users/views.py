@@ -244,11 +244,16 @@ def login():
             username) or User.get_user_by_email(username)
 
         if not user:
-            flash("User account doesn't exists.", 'error')
+            flash("User account doesn't exist.", 'error')
         elif not user.check_password(password):
             flash("Your password is incorrect. Please try again.", 'error')
         else:
             if not user.is_active():
+                # Check if the user is a volunteer and not verified
+                if user.role == 'volunteer' and not user.is_active():
+                    flash("Your account is not verified yet. Please wait for verification from the admin.", 'error')
+                    return redirect(url_for('users.login'))
+                
                 user.send_confirmation()
                 flash("Your account is not active. We've sent you a confirmation email. Please check your email to activate your account.", 'error')
                 return redirect(url_for('users.login'))

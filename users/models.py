@@ -339,7 +339,7 @@ class Post(db.Model):
     content = db.Column(db.Text,nullable=False)
     views = db.Column(db.Integer, default=0)
     image = db.Column(db.String(250), default='')
-    user_id = db.Column(db.Integer,db.ForeignKey("user.id"),nullable=False)
+    user_id = db.Column(db.String(38), db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
     comments = db.relationship("Comment", backref="post", passive_deletes=True, lazy=True)
     likes = db.relationship("Like", backref="post", passive_deletes=True, lazy=True)
     
@@ -365,7 +365,7 @@ class Comment(db.Model):
     date_posted = db.Column(db.DateTime, nullable=False, default=datetime.now())
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     body = db.Column(db.Text,nullable=False)
-    user_id = db.Column(db.Integer,db.ForeignKey("user.id"),nullable=False)
+    user_id = db.Column(db.String(38), db.ForeignKey("user.id", ondelete="CASCADE"),nullable=False)
     post_id = db.Column(db.Integer,db.ForeignKey("post.id"),nullable=False)
     
     def __repr__(self):
@@ -388,7 +388,7 @@ class Like(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     date_created = db.Column(db.DateTime(timezone=True), default=func.now())
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
+    user_id = db.Column(db.String(38), db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
     post_id = db.Column(db.Integer, db.ForeignKey("post.id", ondelete="CASCADE"), nullable=False)
     
     def __repr__(self):
@@ -410,8 +410,8 @@ class Notification(db.Model):
     __tablename__ = 'notification'
 
     id = db.Column(db.String(38), primary_key=True, default=unique_uid, unique=True, nullable=False)
-    recipient_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    recipient_id = db.Column(db.String(38), db.ForeignKey('user.id'), nullable=False)
+    sender_id = db.Column(db.String(38), db.ForeignKey('user.id'), nullable=False)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
     notification_type = db.Column(db.String(20), nullable=False)  # 'like' or 'comment'
     read = db.Column(db.Boolean, default=False)
@@ -433,7 +433,7 @@ class Papers(db.Model):
     link = db.Column(db.String(250), nullable=False)
     stem = db.Column(db.String(250))
     paper_type = db.Column(db.String(50), nullable=False)
-    year_written = db.Column(db.String, nullable=False)
+    year_written = db.Column(db.String(50), nullable=False)
 
     user_id = db.Column(db.String(38), db.ForeignKey('user.id', ondelete="CASCADE"), nullable=False)
 

@@ -49,8 +49,8 @@ class RegisterForm(FlaskForm):
         'volunteer', 'Volunteer')], validators=[DataRequired()])
     
     # Additional fields for volunteer
-    id_copy = FileField('Upload ID Copy', validators=[FileAllowed(['pdf'], message='Please upload PDF only.'), FileSize(max_size=2000000, message='ID copy size should not greater than 2MB.'), DataRequired()])
-    certificates = FileField('Upload Certificates', validators=[FileAllowed(['pdf'], message='Please upload PDF only.'), FileSize(max_size=2000000, message='Certificates size should not greater than 2MB.'), DataRequired()])
+    id_copy = FileField('Upload ID Copy', validators=[FileAllowed(['pdf'], message='Please upload PDF only.'), FileSize(max_size=2000000, message='ID copy size should not greater than 2MB.')])
+    certificates = FileField('Upload Certificates', validators=[FileAllowed(['pdf'], message='Please upload PDF only.'), FileSize(max_size=2000000, message='Certificates size should not greater than 2MB.')])
     
     password = PasswordField('Password',
                              validators=[DataRequired(), Length(
