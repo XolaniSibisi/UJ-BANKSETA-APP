@@ -654,7 +654,7 @@ def forum():
     new_member = User.query.order_by(
         desc(User.created_at)).distinct(User.username).first()
     all_topics_count = Post.query.with_entities(
-        func.count(Post.title.distinct())).scalar()
+        func.count(Post.topic.distinct())).scalar()
     current_date = datetime.now()
     user = User.query.get_or_404(current_user.id)
 
@@ -671,7 +671,7 @@ def forum():
         # Perform search
         search_query = request.form.get('search_query')
         if search_query:
-            posts = Post.query.filter(Post.title.ilike(f'%{search_query}%') | Post.content.ilike(
+            posts = Post.query.filter(Post.topic.ilike(f'%{search_query}%') | Post.content.ilike(
                 f'%{search_query}%')).order_by(Post.date_posted.desc()).all()
         else:
             posts = []
@@ -684,8 +684,6 @@ def forum():
     return render_template('forum.html', posts=posts, form=form, current_date=current_date, format_time_difference=format_time_difference, all_users_count=all_users_count, all_post=all_post, all_topics_count=all_topics_count, new_member=new_member, active_topics=active_topics)
 
 # Function to mark notifications as read
-
-
 def mark_notifications_as_read(user_id):
     notifications = Notification.query.filter_by(
         recipient_id=user_id, read=False).all()
@@ -693,42 +691,33 @@ def mark_notifications_as_read(user_id):
         notification.read = True
     db.session.commit()
 
-
-@users.route('/search_forum', methods=['GET', 'POST'], strict_slashes=False)
+@users.route('/filter_posts', methods=['GET', 'POST'])
 @login_required
-def search_forum():
+def filter_posts():
     form = PostForm()
     all_users_count = User.query.filter(User.role != 'admin').count()
     all_post = len(Post.query.all())
     cutoff_date = datetime.utcnow() - timedelta(days=2)
-    new_member = User.query.order_by(
-        desc(User.created_at)).distinct(User.username).first()
-    all_topics_count = Post.query.with_entities(
-        func.count(Post.title.distinct())).scalar()
+    new_member = User.query.order_by(desc(User.created_at)).distinct(User.username).first()
+    all_topics_count = Post.query.with_entities(func.count(Post.topic.distinct())).scalar()
+    page = request.args.get('page', 1, type=int)
     current_date = datetime.now()
-    user = User.query.get_or_404(current_user.id)
-
+    
     # Query for posts with recent comments
     active_topics = Post.query \
         .join(Comment, Comment.post_id == Post.id) \
         .filter(Comment.date_posted >= cutoff_date) \
         .distinct() \
         .all()
-
+        
     if request.method == 'POST':
-        search_query = request.form.get('search_query')
-        if search_query:
-            # Query for search results
-            posts = Post.query.filter(Post.title.ilike(f'%{search_query}%') | Post.content.ilike(
-                f'%{search_query}%')).order_by(Post.date_posted.desc()).paginate(page=1, per_page=5)
-            return render_template('forum.html', posts=posts, form=form, current_date=current_date, format_time_difference=format_time_difference, all_users_count=all_users_count, all_post=all_post, all_topics_count=all_topics_count, new_member=new_member, active_topics=active_topics)
-
-    # If no search query provided or no search results, render forum template with regular pagination
-    page = request.args.get('page', 1, type=int)
-    posts = Post.query.order_by(
-        Post.date_posted.desc()).paginate(page=page, per_page=5)
-    return render_template('forum.html', posts=posts, form=form, current_date=current_date, format_time_difference=format_time_difference, all_users_count=all_users_count, all_post=all_post, all_topics_count=all_topics_count, new_member=new_member, active_topics=active_topics)
-
+        topic = request.form.get('topic')
+        if topic == "All":
+            posts = Post.query.order_by(Post.date_posted.desc()).paginate(page=page, per_page=5)
+        else:
+            posts = Post.query.filter(or_(Post.topic == topic, topic == " ")).order_by(Post.date_posted.desc()).paginate(page=page, per_page=5)
+        return render_template('forum.html', posts=posts, form=form, selected_topic=topic, current_date=current_date, format_time_difference=format_time_difference, all_users_count=all_users_count, all_post=all_post, all_topics_count=all_topics_count, new_member=new_member, active_topics=active_topics)
+    return render_template('forum.html', form=form, current_date=current_date, format_time_difference=format_time_difference, all_users_count=all_users_count, all_post=all_post, all_topics_count=all_topics_count, new_member=new_member, active_topics=active_topics)
 
 def format_time_difference(delta):
     if delta.days == 0:
@@ -751,6 +740,25 @@ def allowed_image(filename):
 @login_required
 def new_post():
     form = PostForm()
+    
+    # Populate topic choices based on selected STEM
+    if form.stem.data == 'maths':
+        form.topic.choices = [(chapter, chapter)
+                              for chapter in maths_catalogue.keys()]
+    elif form.stem.data == 'science':
+        form.topic.choices = [(chapter, chapter)
+                              for chapter in physical_science_catalogue.keys()]
+
+    # Populate subtopic choices based on selected topic
+    if form.topic.data:
+        if form.stem.data == 'maths' and form.topic.data in maths_catalogue:
+            form.subtopic.choices = [(subtopic, subtopic)
+                                     for subtopic in maths_catalogue[form.topic.data]]
+        elif form.stem.data == 'science' and form.topic.data in physical_science_catalogue:
+            form.subtopic.choices = [
+                (subtopic, subtopic) for subtopic in physical_science_catalogue[form.topic.data]]
+            
+    image_filename = None
     if form.validate_on_submit():
         if form.image.data:
             image_file = form.image.data
@@ -766,14 +774,14 @@ def new_post():
                 flash('Invalid image file format!', 'error')
                 return redirect(url_for('users.new_post'))  # Redirect back to the form
 
-        post = Post(title=form.title.data, content=form.content.data, image=image_filename,
+        post = Post(topic=form.topic.data, subtopic=form.subtopic.data, stem=form.stem.data, content=form.content.data, image=image_filename,
                     author=current_user)
         db.session.add(post)
         db.session.commit()
 
         flash('Your post has been created!', 'success')
         return redirect(url_for('users.forum'))
-    return render_template('create_post.html', title="Create Post", form=form, legend='Create Post')
+    return render_template('create_post.html', title="Create Post", form=form, legend='Create Post', maths_catalogue=maths_catalogue, physical_science_catalogue=physical_science_catalogue)
 
 @users.route("/post/<int:post_id>", methods=['GET', 'POST'])
 @login_required
@@ -809,7 +817,7 @@ def post(post_id):
         db.session.commit()
         return redirect(url_for('users.post', post_id=post_id))
 
-    return render_template('post.html', title=post.title, post=post, current_date=current_date, format_time_difference=format_time_difference, form=form, comments=comments, comment_profiles=comment_profiles, post_profile=post_profile, all_comments_count=all_comments_count, date_posted=date_posted)
+    return render_template('post.html', title=post.topic, post=post, current_date=current_date, format_time_difference=format_time_difference, form=form, comments=comments, comment_profiles=comment_profiles, post_profile=post_profile, all_comments_count=all_comments_count, date_posted=date_posted)
 
 
 def get_notification_count(user_id):
@@ -840,14 +848,21 @@ def update_post(post_id):
         abort(403)
     form = PostForm()
     if form.validate_on_submit():
-        post.title = form.title.data
+        post.topic = form.topic.data
+        post.subtopic = form.subtopic.data
+        post.stem = form.stem.data
         post.content = form.content.data
+        post.image = form.image.data
         db.session.commit()
         flash('Your post has been updated !', 'success')
         return redirect(url_for('users.post', post_id=post.id))
+    
     elif request.method == 'GET':
-        form.title.data = post.title
+        form.title.data = post.topic
+        form.subtopic.data = post.subtopic
+        form.stem.data = post.stem
         form.content.data = post.content
+        form.image.data = post.image
     return render_template('create_post.html', title="Update Post", form=form, legend='Update Post')
 
 

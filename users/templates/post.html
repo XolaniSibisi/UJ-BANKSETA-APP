@@ -10,7 +10,7 @@
     <div class="container media-body">
       <div class="article-metadata">
         {{ render_messages() }}
-        <h2 class="article-title">{{ post.title }}</h2>
+        <h2 class="article-title">{{ post.subtopic }}</h2>
         {% if post_profile and post_profile.avatar %}
         <img class="rounded-circle" style="width: 40px;height: 40px;"
           src="{{ url_for('static', filename='assets/profile/' + post_profile.avatar) }}">

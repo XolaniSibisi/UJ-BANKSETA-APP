@@ -25,7 +25,7 @@
           <div class="col-md-8 mb-3 mb-sm-0">
             <h5>
               <a class="article-title" href="{{url_for('users.post',post_id=post.id)}}"
-                onclick="incrementViewCount({{ post.id }})">{{ post.title }}</a>
+                onclick="incrementViewCount({{ post.id }})">{{ post.subtopic }}</a>
             </h5>
             <p class="text-sm"><span class="op-6">Posted</span>
               {{format_time_difference(current_date-post.date_posted)}} <span class="op-6">by</span> <a
@@ -89,15 +89,16 @@
     <div class="col-lg-3">
       <div class="sticky-top mt-0">
         <div class="text-center mb-3">
-          <form method="POST" action="{{ url_for('users.search_forum') }}">
+          <!-- AUTO COMPLETE DROPDOWN -->
+          <form method="POST" action="{{ url_for('users.filter_posts')}}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="input-group add-on">
-              <input type="text" name="search_query" id="search_query"
-                class="form-control form-control-lg bg-white bg-op-9 ml-auto text-sm w-lg-50"
-                placeholder="Search by title">
-              <button type="submit" class="btn btn-primary">Search</button>
-            </div>
-          </form>
+            <select name="topic" class="selectpicker form-control border-0 mb-3 px-4 py-4 rounded shadow" onchange="this.form.submit()">
+                <option value="All" {% if not selected_topic or selected_topic == "All" %} selected {% endif %}>All</option>
+                {% for topic in posts %}
+                    <option value="{{ topic.topic }}" {% if selected_topic == topic.topic %} selected {% endif %}>{{ topic.topic }}</option>
+                {% endfor %}
+            </select>
+        </form>             
         </div>
         <div class="bg-white mb-3" style="font-size: 10px;">
           <h4 class="px-3 py-2 op-5 m-0 text-center">Active Topics</h4>
@@ -105,7 +106,7 @@
           {% for post in active_topics %}
           <h5 style="font-size: 15px;">
             <a class="article-title" href="{{ url_for('users.post', post_id=post.id) }}"
-              onclick="incrementViewCount({{ post.id }})">{{ post.title }}</a>
+              onclick="incrementViewCount({{ post.id }})">{{ post.subtopic }}</a>
           </h5>
           <p class="text-sm"><span class="op-6">Posted</span> {{ format_time_difference(current_date-post.date_posted)
             }} <span class="op-6">by</span> <a class="text-black"
@@ -197,6 +198,22 @@
   }
 </script>
 
+<script>
+  const sorting = document.querySelector('.selectpicker');
+const commentSorting = document.querySelector('.selectpicker');
+const sortingchoices = new Choices(sorting, {
+    placeholder: false,
+    itemSelectText: ''
+});
+
+
+// Trick to apply your custom classes to generated dropdown menu
+let sortingClass = sorting.getAttribute('class');
+window.onload= function () {
+    sorting.parentElement.setAttribute('class', sortingClass);
+}
+
+</script>
 <script>
   async function incrementViewCount(postId) {
     await fetch(`/increment_view_count/${postId}`, {

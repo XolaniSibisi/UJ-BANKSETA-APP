@@ -183,7 +183,11 @@ class CreateSlotForm(FlaskForm):
     submit = SubmitField('Create Slot')
     
 class PostForm(FlaskForm):
-    title = StringField("",validators=[DataRequired(), Length(10, 100)])
+    stem = SelectField('STEM', choices=[
+                       ('maths', 'Maths'), ('science', 'Science')], validators=[InputRequired()])
+    topic = SelectField('Topic', choices=[], validators=[InputRequired()])
+    subtopic = SelectField('Subtopic', choices=[],
+                           validators=[InputRequired()])
     content = TextAreaField('Content', validators=[DataRequired()])
     image = FileField('Attachment', validators=[FileAllowed(['jpg', 'jpeg', 'png', 'svg'], 'Please upload images only.'), FileSize(max_size=2000000, message='Image size should not greater than 2MB.')])
     submit = SubmitField('Post')
