@@ -87,9 +87,9 @@ def send_volunteer_thank_you_email(email):
         msg = Message('Thank You for Registering as a Volunteer', sender=sender, recipients=[email])
         msg.body = render_template('volunteer_thank_you_email.txt')
         mail.send(msg)
-        print('Volunteer thank you email sent successfully.')  # Debugging statement
+        print('Volunteer thank you email sent successfully.')
     except Exception as e:
-        print(f'Error sending volunteer thank you email: {str(e)}')  # Debugging statement
+        print(f'Error sending volunteer thank you email: {str(e)}')
 
 def send_application_accepted_email(email):
     try:
@@ -97,7 +97,7 @@ def send_application_accepted_email(email):
         msg = Message('Application Accepted', sender=sender, recipients=[email])
         msg.body = render_template('application_accepted_email.txt')
         mail.send(msg)
-        print('Application accepted email sent successfully.')  # Debugging statement
+        print('Application accepted email sent successfully.')
     except Exception as e:
         print(f'Error sending application accepted email: {str(e)}')
 
@@ -107,6 +107,6 @@ def send_application_rejected_email(email):
         msg = Message('Application Rejected', sender=sender, recipients=[email])
         msg.body = render_template('application_rejected_email.txt')
         mail.send(msg)
-        print('Application rejected email sent successfully.')  # Debugging statement
+        print('Application rejected email sent successfully.')
     except Exception as e:
-        print(f'Error sending application rejected email: {str(e)}')  # Debugging statement
+        print(f'Error sending application rejected email: {str(e)}')
