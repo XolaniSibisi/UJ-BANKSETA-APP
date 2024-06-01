@@ -712,8 +712,9 @@ def filter_posts():
         
     if request.method == 'POST':
         topic = request.form.get('topic')
-        if topic == "All":
+        if topic == "filterby":
             posts = Post.query.order_by(Post.date_posted.desc()).paginate(page=page, per_page=5)
+            
         else:
             posts = Post.query.filter(or_(Post.topic == topic, topic == " ")).order_by(Post.date_posted.desc()).paginate(page=page, per_page=5)
         return render_template('forum.html', posts=posts, form=form, selected_topic=topic, current_date=current_date, format_time_difference=format_time_difference, all_users_count=all_users_count, all_post=all_post, all_topics_count=all_topics_count, new_member=new_member, active_topics=active_topics)
@@ -839,31 +840,40 @@ def increment_view_count(post_id):
     else:
         return jsonify({'success': False, 'message': 'View count not incremented for own post'}), 400
 
-
 @users.route("/post/<int:post_id>/update", methods=['POST', 'GET'])
 @login_required
 def update_post(post_id):
     post = Post.query.get_or_404(post_id)
     if post.author != current_user:
         abort(403)
+    
     form = PostForm()
+    
     if form.validate_on_submit():
         post.topic = form.topic.data
         post.subtopic = form.subtopic.data
         post.stem = form.stem.data
         post.content = form.content.data
-        post.image = form.image.data
-        db.session.commit()
-        flash('Your post has been updated !', 'success')
-        return redirect(url_for('users.post', post_id=post.id))
-    
+
+        if form.image.data:
+            post.image = form.image.data
+        
+        try:
+            db.session.commit()
+            flash('Your post has been updated!', 'success')
+            return redirect(url_for('users.post', post_id=post.id))
+        except Exception as e:
+            db.session.rollback()
+            flash('Error updating post: ' + str(e), 'danger')
+
     elif request.method == 'GET':
-        form.title.data = post.topic
+        form.topic.data = post.topic
         form.subtopic.data = post.subtopic
         form.stem.data = post.stem
         form.content.data = post.content
-        form.image.data = post.image
-    return render_template('create_post.html', title="Update Post", form=form, legend='Update Post')
+        form.image.data = post.image  # This may need to be adjusted based on how your image is handled
+    
+    return render_template('create_post.html', title="Update Post", form=form, legend='Update Post', maths_catalogue=maths_catalogue, physical_science_catalogue=physical_science_catalogue)
 
 
 @users.route("/delete/<int:post_id>/update", methods=['POST'])

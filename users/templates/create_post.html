@@ -37,9 +37,15 @@
                     </select>
                 </div>
                 {{ render_field(form.content, class="form-control form-control-lg", placeholder="Content") }}
-                {{ render_field(form.image, class="form-control form-control-file", placeholder="Image")}}         
-                {{ render_field(form.submit, class="btn btn-primary mt-2") }}
-                <button type="button" class="btn btn-dark mt-2" onclick="history.back()">Cancel</button>
+                {{ render_field(form.image, class="form-control form-control-file", placeholder="Image")}}
+                <div class="row justify-content-center">
+                    <div class="col-auto">
+                        {{ render_field(form.submit, class="btn btn-primary mt-2") }}
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-dark mt-2" onclick="history.back()">Cancel</button>
+                    </div>
+                </div>
             </form>                                             
         </div>
     </div>
@@ -47,8 +53,8 @@
 
 <script>
     // Define the dictionaries containing topics and subtopics
-    const mathsCatalogue = {{ maths_catalogue| tojson | safe }};
-    const scienceCatalogue = {{ physical_science_catalogue| tojson | safe }};
+    const mathsCatalogue = {{ maths_catalogue|default([]) |tojson | safe }};
+    const scienceCatalogue = {{ physical_science_catalogue|default([]) |tojson | safe }};
 
     // Function to populate the topics based on the selected STEM
     function populateTopics() {

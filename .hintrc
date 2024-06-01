@@ -44,6 +44,20 @@
     ],
     "button-type": "off",
     "apple-touch-icons": "off",
-    "disown-opener": "off"
+    "disown-opener": "off",
+    "axe/parsing": [
+      "default",
+      {
+        "duplicate-id-active": "off"
+      }
+    ],
+    "compat-api/css": [
+      "default",
+      {
+        "ignore": [
+          "user-select"
+        ]
+      }
+    ]
   }
 }

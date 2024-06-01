@@ -3,27 +3,162 @@
 {% block title %}Home{% endblock %}
 
 {% block body %}
-<main class="my-5">
-    <div class="container-fluid">
+
+<style>
+
+  body {
+      position: relative;
+      background: #ffffff;
+      /* font-family: Helvetica Neue, Helvetica, Arial, sans-serif; */
+      color: #000;
+      margin: 0;
+      padding: 0;
+  }
+
+  .swiper {
+      width: 100%;
+      height: 100%;
+
+  }
+
+  .swiper-wrapper {
+      height: 70vh;
+      /* margin-bottom: 200vh */
+  }
+
+  .swiper-slide {
+      text-align: center;
+      font-size: 18px;
+      /* height: 90vh; */
+      padding-top: 26px;
+      display: flex;
+      justify-content: center;
+      background-size: cover;
+      align-items: center;
+      background-repeat: no-repeat;
+      background-image: linear-gradient(rgba(6, 0, 8, 0.7), rgba(0, 0, 0, 0.7)), url(./images/Products\ and\ Services\ Promotion\ Instagram\ Story\ Video\ in\ Violet\ Cyan\ Gradient\ Tech\ Style\ \(1\).gif)
+  }
+
+  .swiper-slide img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background-color: #141212
+
+  }
+
+  .bottom-left {
+      position: absolute;
+      bottom: 8px;
+      left: 16px;
+  }
+
+  .custom-container {
+      width: 100%;
+      max-width: 900px;
+      color: #fff;
+      text-align: left;
+      padding: 20px;
+      margin-top: 10px;
+      margin-bottom: 10px;
+  }
+
+  .white_text {
+      color: rgb(247, 246, 244);
+      font-size: 60px;
+      font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+      margin-bottom: 10px;
+      /* Adjust the bottom margin */
+
+  }
+
+  .text-center {
+    font-size: 40px;
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+  }
+
+  .text-orange {
+      color:#494a4b;
+      font-size: 25px;
+      margin-top: 10px;
+      font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+      /* Adjust the top margin */
+      margin-bottom: 10px;
+      /* Adjust the bottom margin */
+  }
+
+
+  .display-3 {
+      font-size: 2.5rem;
+      /* Adjust as needed */
+  }
+
+  .button-slider {
+      background-color: transparent;
+      border: 0.001px solid #f0eae7;
+      color: #faf8f7;
+      width: 7em;
+      height: 33px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      line-height: 35px;
+      text-decoration: none;
+      border-radius: 3px;
+      margin-top: 10px;
+      font-size: 16px;
+      padding-left: 12px;
+      margin-left: 10px;
+  }
+
+
+  .button-slider:hover {
+      background-color: #ff6600;
+      box-shadow: #141212;
+      /* Change color on hover */
+  }
+</style>
       {{ render_messages() }}
-        <div class="row justify-content-center">
-            <p class="mt-5 lead" style="color: black;">
-              Welcome to the University of Johannesburg Matric Support Platform. Your Matric year is the most important of your academic life and we want to ensure that you have the best support to complement the efforts that you are making. You will find notes, guides, past year papers, worksheets, memos, explanatory videos, live classes, recordings of live classes, access to qualified tutors and links to high quality study material on this platform.  
-               
-              This platform is not simply a repository of supplementary material; it also directs you to other parts of the web that contain content that you may need.  We also have qualified tutors who have been vetted by ourselves who will deliver live classes on topics requested by students who can communicate with us via the Forum or the Contact Us page. We are continuously updating the site based on user data and feedback. Please take the time to share your feedback and participate in our surveys. 
-              </p><br>
-        </div>
-        <div>
-            <img src="{{ url_for('static', filename='assets/images/tutorials.jpg') }}" style="width: 100vw; height: 95vh;" class="img-fluid" alt="Grade 12">
-        </div>
+        <!-- ....................CAOUROSAL ..j -->
+        <div class="swiper mySwiper">
+          <div class="swiper-wrapper">
+              <div class="swiper-slide">
+                  <div class="video-background">
+                      <video playsinline="playsinline" autoplay="autoplay" muted="muted" loop="loop">
+                          <source src="{{ url_for('static', filename='assets/images/O2 Smart Net - concept art_animation.mp4')}}" type="video/mp4">
+                      </video>
+                      <div class="content">
+                          <div class="p-5 custom-container">
+                              <h7 class="text-center">Science, Technology, Engineering and Mathematics</h1>
+                                  <h6 class="text-orange text-uppercase mb-md-3">Nurturing Rural Communities</h6>
+
+                          </div>
+                      </div>
+                  </div>
+              </div>
+              <div class="swiper-button-next"></div>
+              <div class="swiper-button-prev"></div>
+              <div class="swiper-pagination"></div>
+          </div>
+      </div>
+        <br><br><br>
+        <h3 class="text-center">Site Content</h3>
         <br>
         <div class="row row-cols-1 row-cols-md-3 g-4">
             <div class="col">
               <div class="card h-100">
                 <a href="{{ url_for('users.access_content')}}"><img src="{{ url_for('static', filename='assets/images/subject_content.jpeg') }}" class="card-img-top" alt="..."></a>
                 <div class="card-body">
-                  <a href="{{ url_for('users.access_content')}}"><h5 class="card-title">SUBJECT CONTENT</h5></a>
-                  <p class="card-text">You will find notes, study guides and links to videos here. The material is organized as per the topics in the CAPs curriculum.  Some content is available for download whilst others are available as links to selected sites.  Currently we only offer content for grade 12 Maths and Physical Science. We intend to expand the scope to other matric subjects in the near future.</p>
+                  <h5 class="card-title">SUBJECT CONTENT</h5>
+                  <p>You will find notes, study guides and links to videos here. The material is organized as per the topics in the CAPs curriculum. Some content is available for download whilst others are available as links to selected sites.  Currently we only offer content for grade 12 Maths and Physical Science. We intend to expand the scope to other matric subjects in the near future.</p>
+                  <div class="button-container">
+                  <a href="{{ url_for('users.access_content')}}" class="read-more-button">
+                    Read More
+                    <span class="arrow">➔</span>
+                </a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -32,7 +167,13 @@
                 <img src="{{ url_for('static', filename='assets/images/survey.jpg') }}" height="238" class="card-img-top" alt="...">
                 <div class="card-body">
                   <h5 class="card-title">TAKE A SURVEY</h5>
-                  <p class="card-text">This site is intended to be responsive to the needs of its users. As professional researchers we believe the best way to understand your needs is to ask you. Please take the time to complete surveys that you may find here. Ultimately you are intended to be the biggest beneficiary of this sacrifice of your time.</p>
+                  <p>This site is intended to be responsive to the needs of its users. As professional researchers we believe the best way to understand your needs is to ask you. Please take the time to complete surveys that you may find here. Ultimately you are intended to be the biggest beneficiary of this sacrifice of your time.</p><br>
+                  <div class="button-container">
+                  <a href="#" class="read-more-button">
+                    Read More
+                    <span class="arrow">➔</span>
+                </a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -40,8 +181,14 @@
               <div class="card h-100">
                 <a href="{{ url_for('users.practice') }}"><img src="{{ url_for('static', filename='assets/images/practice.jpg') }}" height="238" class="card-img-top" alt="..."></a> 
                 <div class="card-body">
-                  <a href="{{ url_for('users.practice')}}"><h5 class="card-title">PRACTICE</h5></a> 
-                  <p class="card-text">Here you will find worksheets, problems and solutions. The content is arranged as per the CAPs curriculum. You are advised to master these problems before progressing to the past year papers.</p>
+                  <h5 class="card-title">PRACTICE</h5> 
+                  <p>Here you will find worksheets, problems and solutions. The content is arranged as per the CAPs curriculum. You are advised to master these problems before progressing to the past year papers.</p><br><br>
+                  <div class="button-container">
+                  <a href="{{ url_for('users.practice')}}" class="read-more-button">
+                    Read More
+                    <span class="arrow">➔</span>
+                </a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -49,8 +196,14 @@
               <div class="card h-100">
                 <a href="{{ url_for('users.live_classes')}}"><img src="{{ url_for('static', filename='assets/images/live.jpg') }}" height="238" class="card-img-top" alt="..."></a> 
                 <div class="card-body">
-                  <a href="{{ url_for('users.live_classes')}}"><h5 class="card-title">VIRTUAL CLASSES</h5></a> 
-                  <p class="card-text">Qualified volunteers, who are vetted by us, provide live classes on topics requested by members of our community. You will need to install MS Teams on your device and join using the link on the scheduled date and time. The classes are interactive and you can ask questions.</p>
+                  <h5 class="card-title">VIRTUAL CLASSES</h5> 
+                  <p>Qualified volunteers, who are vetted by us, provide live classes on topics requested by members of our community. You will need to install MS Teams on your device and join using the link on the scheduled date and time. The classes are interactive and you can ask questions.</p><br><br>
+                  <div class="button-container">
+                  <a href="{{ url_for('users.live_classes')}}" class="read-more-button">
+                    Read More
+                    <span class="arrow">➔</span>
+                </a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -58,8 +211,14 @@
               <div class="card h-100">
                 <a href="{{ url_for('users.papers_by_year')}}"><img src="{{ url_for('static', filename='assets/images/past-papers.png') }}" height="238" class="card-img-top" alt="..."></a>
                 <div class="card-body">
-                  <a href="{{ url_for('users.papers_by_year')}}"><h5 class="card-title">PAST YEAR PAPERS</h5></a>
-                    <p class="card-text">A complete repository of the past 20 years of NSC Matric papers and memos are available here.</p>
+                  <h5 class="card-title">PAST YEAR PAPERS</h5>
+                    <p>A complete repository of the past 20 years of NSC Matric papers and memos are available here.</p><br><br><br><br><br>
+                    <div class="button-container">
+                    <a href="{{ url_for('users.papers_by_year')}}" class="read-more-button">
+                      Read More
+                      <span class="arrow">➔</span>
+                  </a>
+                    </div>
                 </div>
               </div>
           </div>
@@ -67,13 +226,62 @@
             <div class="card h-100">
               <a href="{{ url_for('users.forum')}}"><img src="{{ url_for('static', filename='assets/images/forum.jpeg') }}" height="238" class="card-img-top" alt="..."></a> 
               <div class="card-body">
-                <a href="{{ url_for('users.forum') }}"><h5 class="card-title">FORUM</h5></a> 
-                <p class="card-text">The forum is the medium through which our community engages and interacts. Users are encouraged to share problems as well as solutions to problems posted on the site. The objective is to ensure that every learner is able to access support for any maths and science problem they may have.  Please use the forum responsibly; it is moderated by our admin to ensure a safe space for all users.</p>
+                <h5 class="card-title">FORUM</h5>
+                <p>The forum is the medium through which our community engages and interacts. Users are encouraged to share problems as well as solutions to problems posted on the site. The objective is to ensure that every learner is able to access support for any maths and science problem they may have.  Please use the forum responsibly; it is moderated by our admin to ensure a safe space for all users.</p>
+                <div class="button-container">
+                <a href="{{ url_for('users.forum') }}" class="read-more-button">
+                  Read More
+                  <span class="arrow">➔</span>
+              </a>
+                </div>
               </div>
             </div>
           </div>
     </div>
-</main>
+<!-- Initialize Swiper -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script>
+  var swiper = new Swiper(".mySwiper", {
+      spaceBetween: 30,
+      centeredSlides: true,
+      autoplay: {
+          delay: 2500,
+          disableOnInteraction: false,
+      },
+      pagination: {
+          el: ".swiper-pagination",
+          clickable: true,
+      },
+      navigation: {
+          nextEl: ".swiper-button-next",
+          prevEl: ".swiper-button-prev",
+      },
+  });
+
+  // create method that counts the number of clicks, events,type of event take 
+  // Function to count clicks on the HTML button
+  function countClicks() {
+      // Get the HTML button element by its class name
+      var button = document.querySelector('.msg-btn');
+
+      // Initialize a variable to store the count of clicks
+      var clickCount = 0;
+
+      // Add a click event listener to the button
+      button.addEventListener('click', function () {
+          // Increment the click count each time the button is clicked
+          clickCount++;
+
+          // Log the current click count to the console
+          console.log('Number of clicks: ' + clickCount);
+      });
+  }
+
+  // Call the function to start counting clicks
+  countClicks();
+
+</script>
+
 <script>
   // Function to hide messages after a delay
   function hideMessages() {

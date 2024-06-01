@@ -12,7 +12,7 @@
       <div class="row text-left mb-1">
         <div class="col-lg-6 text-lg-right">
           <div class="text-left mb-3">
-            <a class="btn btn-lg btn-block btn-success op-7 rounded-0 py-2 bg-op-6 roboto-bold"
+            <a class="btn btn-lg btn-block btn-success op-7 rounded-4 py-2 bg-op-6 roboto-bold"
               href="{{ url_for('users.new_post') }}">Ask Question</a>
           </div>
         </div>
@@ -93,7 +93,7 @@
           <form method="POST" action="{{ url_for('users.filter_posts')}}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <select name="topic" class="selectpicker form-control border-0 mb-3 px-4 py-4 rounded shadow" onchange="this.form.submit()">
-                <option value="All" {% if not selected_topic or selected_topic == "All" %} selected {% endif %}>All</option>
+                <option value="filterby">Filter by Topic</option>
                 {% for topic in posts %}
                     <option value="{{ topic.topic }}" {% if selected_topic == topic.topic %} selected {% endif %}>{{ topic.topic }}</option>
                 {% endfor %}

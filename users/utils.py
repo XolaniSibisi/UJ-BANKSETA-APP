@@ -38,7 +38,7 @@ def send_reset_password(user=None):
     subject = "Reset Your Password."
     recipient = user.email
 
-    reset_link = url_for('users.reset_password', token=user.security_token)
+    reset_link = f"http://localhost:5000{url_for('users.reset_password', token=user.security_token)}"
     content = f"""
     Hello, {user.username}
 
@@ -54,7 +54,7 @@ def send_reset_email(user=None):
     subject = "Confirm Your Email Address."
     recipient = user.change_email
 
-    confirmation_link = url_for('users.confirm_email', token=user.security_token)
+    confirmation_link = f"http://localhost:5000{url_for('users.confirm_email', token=user.security_token)}"
     content = f"""
     Hello, {user.username}
     

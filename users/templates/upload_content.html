@@ -45,8 +45,13 @@
                     {{ render_field(form.content_type, class="form-select mb-3", id="content_type") }}
 
                     <input type="hidden" name="published" value="True">
-                    <button type="submit" class="btn btn-primary">Upload</button>
-                    <a href="{{ url_for('users.dashboard') }}" class="btn btn-dark">Cancel</a>
+                    <div class="row justify-content-center">
+                        <div class="col-auto">
+                            <button type="submit" class="btn btn-primary">Upload</button>
+                        </div>
+                        <div class="col-auto">
+                            <a href="{{ url_for('users.dashboard') }}" class="btn btn-dark">Cancel</a>
+                        </div>
                 </form>
             </div>
         </div>
