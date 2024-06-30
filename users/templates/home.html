@@ -36,7 +36,6 @@
       background-size: cover;
       align-items: center;
       background-repeat: no-repeat;
-      background-image: linear-gradient(rgba(6, 0, 8, 0.7), rgba(0, 0, 0, 0.7)), url(./images/Products\ and\ Services\ Promotion\ Instagram\ Story\ Video\ in\ Violet\ Cyan\ Gradient\ Tech\ Style\ \(1\).gif)
   }
 
   .swiper-slide img {
@@ -127,7 +126,7 @@
               <div class="swiper-slide">
                   <div class="video-background">
                       <video playsinline="playsinline" autoplay="autoplay" muted="muted" loop="loop">
-                          <source src="{{ url_for('static', filename='assets/images/O2 Smart Net - concept art_animation.mp4')}}" type="video/mp4">
+                          <source src="{{ url_for('static', filename='assets/images/animation.mp4')}}" type="video/mp4">
                       </video>
                       <div class="content">
                           <div class="p-5 custom-container">
@@ -149,7 +148,7 @@
         <div class="row row-cols-1 row-cols-md-3 g-4">
             <div class="col">
               <div class="card h-100">
-                <a href="{{ url_for('users.access_content')}}"><img src="{{ url_for('static', filename='assets/images/subject_content.jpeg') }}" class="card-img-top" alt="..."></a>
+                <a href="{{ url_for('users.access_content')}}"><img src="{{ url_for('static', filename='assets/images/subject_content.jpeg') }}" height="238" class="card-img-top" alt="..."></a>
                 <div class="card-body">
                   <h5 class="card-title">SUBJECT CONTENT</h5>
                   <p>You will find notes, study guides and links to videos here. The material is organized as per the topics in the CAPs curriculum. Some content is available for download whilst others are available as links to selected sites.  Currently we only offer content for grade 12 Maths and Physical Science. We intend to expand the scope to other matric subjects in the near future.</p>
@@ -167,7 +166,7 @@
                 <img src="{{ url_for('static', filename='assets/images/survey.jpg') }}" height="238" class="card-img-top" alt="...">
                 <div class="card-body">
                   <h5 class="card-title">TAKE A SURVEY</h5>
-                  <p>This site is intended to be responsive to the needs of its users. As professional researchers we believe the best way to understand your needs is to ask you. Please take the time to complete surveys that you may find here. Ultimately you are intended to be the biggest beneficiary of this sacrifice of your time.</p><br>
+                  <p>This site is intended to be responsive to the needs of its users. As professional researchers we believe the best way to understand your needs is to ask you. Please take the time to complete surveys that you may find here. Ultimately you are intended to be the biggest beneficiary of this sacrifice of your time.</p><br><br>
                   <div class="button-container">
                   <a href="#" class="read-more-button">
                     Read More
@@ -182,7 +181,7 @@
                 <a href="{{ url_for('users.practice') }}"><img src="{{ url_for('static', filename='assets/images/practice.jpg') }}" height="238" class="card-img-top" alt="..."></a> 
                 <div class="card-body">
                   <h5 class="card-title">PRACTICE</h5> 
-                  <p>Here you will find worksheets, problems and solutions. The content is arranged as per the CAPs curriculum. You are advised to master these problems before progressing to the past year papers.</p><br><br>
+                  <p>Here you will find worksheets, problems and solutions. The content is arranged as per the CAPs curriculum. You are advised to master these problems before progressing to the past year papers.</p><br><br><br><br>
                   <div class="button-container">
                   <a href="{{ url_for('users.practice')}}" class="read-more-button">
                     Read More
@@ -212,7 +211,7 @@
                 <a href="{{ url_for('users.papers_by_year')}}"><img src="{{ url_for('static', filename='assets/images/past-papers.png') }}" height="238" class="card-img-top" alt="..."></a>
                 <div class="card-body">
                   <h5 class="card-title">PAST YEAR PAPERS</h5>
-                    <p>A complete repository of the past 20 years of NSC Matric papers and memos are available here.</p><br><br><br><br><br>
+                    <p>A complete repository of the past 20 years of NSC Matric papers and memos are available here.</p><br><br><br><br>
                     <div class="button-container">
                     <a href="{{ url_for('users.papers_by_year')}}" class="read-more-button">
                       Read More

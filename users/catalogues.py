@@ -3,18 +3,21 @@ maths_catalogue = {
         "Quadratic sequences",
         "Arithmetic sequences",
         "Geometric sequences",
-        "Finite arithmetic series",
-        "Finite geometric series",
-        "Infinite series",
+        "Arithmetic series",
+        "Arithmetic series proof"
+        "Geometric series",
+        "Geometric series proof",
+        "Sigma notation",
+        "Sum to infinity",
     ],
     
     "Functions, Inverses and Logarithms": [
         "Functions and relations",
-        "Inverse functions",
+        "Inverse graphs",
         "Linear functions",
         "Quadratic functions",
         "Exponential functions",
-        "Logarithmic functions",
+        "Logarithmic functions and laws of logarithms",
     ],
     
     "Financial Mathematics": [

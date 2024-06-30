@@ -387,8 +387,8 @@ background-color: #10144A;
 .conclude {
   /* background-color:hsl(0, 0%, 0%); */
   width: 100%;
-  height: 50vh;
-  margin-top: 30px;
+  height: 60vh;
+  margin-top: 20px;
   position: relative; /* Set position to relative */
   display: flex;
   align-items: center;
@@ -399,14 +399,14 @@ background-color: #10144A;
   /* background-color: #c7bbbb; */
   width: 100%;
   /* height: 100%; */
-  height: 60vh;
+  height: 56vh;
   border: #007bff;
   position: absolute; /* Set position to absolute */
-  top: 10px; /* Set top distance from the top of .conclude */
+  top: 15px; /* Set top distance from the top of .conclude */
   display: flex;
   align-items: center;
   justify-content: center;
-  background-image: linear-gradient(rgba(6, 0, 8, 0.7), rgba(0, 0, 0, 0.7)), url('/users/static/assets/images/5555555555Artifictelligence\ ...wnload\ -\ Pngtree_animation.mp4');
+  background-image: linear-gradient(rgba(6, 0, 8, 0.7), rgba(0, 0, 0, 0.7));
   background-repeat: no-repeat;
   background-size: cover;
 }

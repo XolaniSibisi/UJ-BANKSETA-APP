@@ -58,6 +58,12 @@
           "user-select"
         ]
       }
+    ],
+    "axe/aria": [
+      "default",
+      {
+        "aria-valid-attr-value": "off"
+      }
     ]
   }
 }
