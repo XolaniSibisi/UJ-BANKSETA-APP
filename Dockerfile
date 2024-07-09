@@ -1,17 +1,24 @@
 # Use the official Python 3.8 slim image as the base image
-FROM python:3.8-slim
+FROM python:3.11
+
+# Set up environment variables for Python
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
 # Set the working directory within the container
-WORKDIR /api-flask
+WORKDIR /app
 
-# Copy the necessary files and directories into the container
+# Copy only the requirements file first to leverage Docker caching
+COPY requirements.txt .
+
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the entire application code
 COPY . .
-
-# Upgrade pip and install Python dependencies
-RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
 # Expose port 5000 for the Flask application
 EXPOSE 5000
 
 # Define the command to run the Flask application
-CMD ["python3", "app.py"]
+CMD ["python", "app.py"]
