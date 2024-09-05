@@ -368,7 +368,7 @@ class Comment(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     body = db.Column(db.Text,nullable=False)
     user_id = db.Column(db.String(38), db.ForeignKey("user.id", ondelete="CASCADE"),nullable=False)
-    post_id = db.Column(db.Integer,db.ForeignKey("post.id"),nullable=False)
+    post_id = db.Column(db.Integer,db.ForeignKey("post.id", ondelete="CASCADE"),nullable=False)
     
     def __repr__(self):
         return f"Comment('{self.body}', '{self.date_posted}', '{self.post_id}')"
@@ -412,9 +412,9 @@ class Notification(db.Model):
     __tablename__ = 'notification'
 
     id = db.Column(db.String(38), primary_key=True, default=unique_uid, unique=True, nullable=False)
-    recipient_id = db.Column(db.String(38), db.ForeignKey('user.id'), nullable=False)
-    sender_id = db.Column(db.String(38), db.ForeignKey('user.id'), nullable=False)
-    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+    recipient_id = db.Column(db.String(38), db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+    sender_id = db.Column(db.String(38), db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id', ondelete="CASCADE"), nullable=False)
     notification_type = db.Column(db.String(20), nullable=False)  # 'like' or 'comment'
     read = db.Column(db.Boolean, default=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
