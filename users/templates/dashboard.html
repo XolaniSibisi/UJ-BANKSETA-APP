@@ -119,7 +119,6 @@
                     <th class="text-center">Topic</th>
                     <th class="text-center">Subtopic</th>
                     <th class="text-center">Content Type</th>
-                    <th class="text-center">Link</th>
                     <th class="text-center">Subject</th>
                     <th class="text-center">Actions</th>
                 </tr>
@@ -128,9 +127,8 @@
                 {% for content in all_content %}
                 <tr>
                     <td class="text-center">{{ content.topic }}</td>
-                    <td class="text-center">{{ content.subtopic }}</td>
+                    <td class="text-center"><a href="{{ content.link }}" target="_blank">{{ content.subtopic }}</a></td>
                     <td class="text-center">{{ content.content_type }}</td>
-                    <td class="text-center">{{ content.link }}</td>
                     <td class="text-center">{{ content.stem }}</td>
                     <td class="align-middle">
                         <div style="display: flex;">

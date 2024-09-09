@@ -34,8 +34,14 @@
                         <input type="text" class="form-control" id="content_type" name="content_type"
                             value="{{ content.content_type }}">
                     </div>
-                    <button type="submit" class="btn btn-primary">Update</button> <a
-                        href="{{ url_for('users.dashboard') }}" class="btn btn-dark">Cancel</a>
+                    <div class = 'row'>
+                        <div class = 'col'>
+                            <button type="submit" class="btn btn-primary">Update</button>
+                        </div>
+                        <div class='col mb-3'>
+                            <a href="{{ url_for('users.dashboard') }}" class="btn btn-dark">Cancel</a>
+                        </div>
+                    </div>
                 </form>
             </div>
         </div>

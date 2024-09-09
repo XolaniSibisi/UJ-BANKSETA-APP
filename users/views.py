@@ -1420,7 +1420,7 @@ def dashboard():
     # Fetch all content from the database
     page = request.args.get('page', 1, type=int)
     per_page = 5
-    all_content = Content.query.paginate(page=page, per_page=per_page)
+    all_content = Content.query.order_by(Content.created_at.desc()).paginate(page=page, per_page=per_page)
 
     # Get the count of students
     num_students = User.query.filter_by(role='student').count()
