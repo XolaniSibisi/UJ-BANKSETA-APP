@@ -3,6 +3,8 @@ migrations/
 *.py[cod]
 *$py.class
 .pyc
+.vscode/
+.vs/
 
 .env
 .venv
