@@ -10,7 +10,6 @@
             <h1 class="mt-5 text-center" style="padding-top: 2.0rem;">Upload Past Paper</h1>
             <form method="POST" action="{{ url_for('users.papers') }}" class="mt-4">
                 {{ form.hidden_tag() }}
-                {{ form.csrf_token() }}
                 {{ render_messages() }}
                 {{ render_field(form.stem, class="form-select", label="Choose your stem") }}
                 {{ render_field(form.title, placeholder="Enter the title of the paper") }}

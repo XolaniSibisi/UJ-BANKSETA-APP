@@ -12,7 +12,7 @@
             <form method="post" action="{{ url_for('users.create_slot') }}" style="margin-bottom: 100px;">
                 {{ render_messages() }}
                 {{ form.hidden_tag() }}
-                {{ form.csrf_token() }}
+     
                 <!-- STEM Radio Buttons -->
                 <div class="mb-3">
                     <label for="stem" class="form-label">Subject</label><br>

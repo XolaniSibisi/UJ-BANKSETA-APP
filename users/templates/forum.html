@@ -4,166 +4,187 @@
 
 {% block body %}
 <div class="container">
-  <h1 class="text-center mt-5" style="padding-top: 1.5rem;">Welcome to the Forum</h1>
-  <div class="row mt-4">
-    <!-- Main content -->
-    {{ render_messages() }}
-    <div class="col-lg-9 mb-2">
-      <div class="row text-left mb-1">
-        <div class="col-lg-6 text-lg-right">
-          <div class="text-left mb-3">
-            <a class="btn btn-lg btn-block btn-success op-7 rounded-4 py-2 bg-op-6 roboto-bold"
-              href="{{ url_for('users.new_post') }}">Ask Question</a>
-          </div>
-        </div>
-      </div>
-      {% if posts.items %}
-      {% for post in posts.items %}
-      <div
-        class="card row-hover pos-relative px-2 mb-3 border-warning border-top-0 border-right-0 border-bottom-0 rounded-0">
-        <div class="row align-items-center">
-          <div class="col-md-8 mb-3 mb-sm-0">
-            <h5>
-              <a class="article-title" href="{{url_for('users.post',post_id=post.id)}}"
-                onclick="incrementViewCount({{ post.id }})">{{ post.subtopic }}</a>
-            </h5>
-            <p class="text-sm"><span class="op-6">Posted</span>
-              {{format_time_difference(current_date-post.date_posted)}} <span class="op-6">by</span> <a
-                class="text-black" href="{{url_for('users.user_posts',username=post.author.username)}}">{{
-                post.author.username }}</a></p>
-          </div>
-          <p class="text-sm">{{ post.content }}</p>
-        </div>
-        {% if post.image %}
-        <div class="row align-items-center">
-          <div class="col-md-8 mb-3 mb-sm-0 text-center">
-            <img src="{{ url_for('static', filename='assets/problems/' + post.image) }}" alt="Post Image"
-              class="img-fluid" width="275" height="183" data-enlargeable width="100" style="cursor: zoom-in">
-          </div>
-        </div>
-        {% endif %}
-        <div class="col-md-3 op-7">
-          <div class="row text-center op-7">
-            <div class="col px-1">
-              {% if current_user.id in post.likes|map(attribute="user_id")|list %}
-              <i class="ion-ios-heart icon-1x" id="like-button-{{post.id}}" onclick="like({{post.id}})"></i>
-              {% else %}
-              <i class="ion-ios-heart-outline icon-1x" id="like-button-{{post.id}}" onclick="like({{post.id}})"></i>
-              {% endif %}
+    <h1 class="text-center mt-5" style="padding-top: 1.5rem;">Welcome to the Forum</h1>
+    <div class="row mt-4">
+        <!-- Main content -->
+        {{ render_messages() }}
+        <div class="col-lg-9 mb-2">
+            <div class="row text-left mb-1">
+                <div class="col-lg-6 text-lg-right">
+                    <div class="text-left mb-3">
+                        <a class="btn btn-lg btn-block btn-success op-7 rounded-4 py-2 bg-op-6 roboto-bold"
+                           href="{{ url_for('users.new_post') }}">Ask Question</a>
+                    </div>
+                </div>
             </div>
-            <div class="col px-1"> <i class="ion-ios-chatboxes-outline icon-1x"></i> <span class="d-block text-sm">{{
-                post.comments|length }}</span> </div>
-            <div id="viewCount_{{ post.id }}" class="col px-1"><i class="ion-ios-eye-outline icon-1x"></i> <span
-                id="viewCountValue_{{ post.id }}" class="d-block text-sm">{{ post.views }}</span></div>
-          </div>
-        </div>
-      </div>
-      {% endfor %}
+            {% if posts.items %}
+            {% for post in posts.items %}
+            <div class="card row-hover pos-relative px-2 mb-3 border-warning border-top-0 border-right-0 border-bottom-0 rounded-0">
+                <div class="row align-items-center">
+                    <div class="col-md-8 mb-3 mb-sm-0">
+                        <h5>
+                            <a class="article-title"
+                               href="{{ url_for('users.post', post_id=post.id) }}"
+                               onclick="incrementViewCount('{{ post.id }}')">
+                                {{ post.subtopic }}
+                            </a>
+                        </h5>
 
-      {% else %}
-      <!-- Display message when no posts are found -->
-      <div class="alert alert-warning" role="alert">
-        No posts found matching the search criteria.
-      </div>
-      {% endif %}
-      <div class="text-center">
-        <nav aria-label="Page navigation example">
-          <ul class="pagination justify-content-center">
-            <li class="page-item {% if not posts.has_prev %} disabled {% endif %}">
-              <a class="page-link" href="{{ url_for('users.forum', page=posts.prev_num) }}" tabindex="-1"
-                aria-disabled="true">Previous</a>
-            </li>
-            {% for page_num in posts.iter_pages() %}
-            <li class="page-item {% if page_num == posts.page %} active {% endif %}">
-              <a class="page-link" href="{{ url_for('users.forum', page=page_num) }}">{{ page_num }}</a>
-            </li>
+                        <p class="text-sm">
+                            <span class="op-6">Posted</span>
+                            {{format_time_difference(current_date-post.date_posted)}} <span class="op-6">by</span> <a class="text-black" href="{{url_for('users.user_posts',username=post.author.username)}}">
+                                {{
+                post.author.username
+                                }}
+                            </a>
+                        </p>
+                    </div>
+                    <p class="text-sm">{{ post.content }}</p>
+                </div>
+                {% if post.image %}
+                <div class="row align-items-center">
+                    <div class="col-md-8 mb-3 mb-sm-0 text-center">
+                        <img src="{{ url_for('static', filename='assets/problems/' + post.image) }}" alt="Post Image"
+                             class="img-fluid" width="275" height="183" data-enlargeable width="100" style="cursor: zoom-in">
+                    </div>
+                </div>
+                {% endif %}
+                <div class="col-md-3 op-7">
+                    <div class="row text-center op-7">
+                        <div class="col px-1">
+                            {% if current_user.id in post.likes|map(attribute="user_id")|list %}
+                            <i class="ion-ios-heart icon-1x" id="like-button-{{post.id}}" onclick="like('{{post.id}}')"></i>
+                            {% else %}
+                            <i class="ion-ios-heart-outline icon-1x" id="like-button-{{post.id}}" onclick="like('{{post.id}}')"></i>
+                            {% endif %}
+                        </div>
+                        <div class="col px-1">
+                            <i class="ion-ios-chatboxes-outline icon-1x"></i> <span class="d-block text-sm">
+                                {{ post.comments|length }}
+                            </span>
+                        </div>
+                        <div id="viewCount_{{ post.id }}" class="col px-1">
+                            <i class="ion-ios-eye-outline icon-1x"></i> <span id="viewCountValue_{{ post.id }}" class="d-block text-sm">{{ post.views }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
             {% endfor %}
-            <li class="page-item {% if not posts.has_next %} disabled {% endif %}">
-              <a class="page-link" href="{{ url_for('users.forum', page=posts.next_num) }}">Next</a>
-            </li>
-          </ul>
-        </nav>
-      </div>
+
+            {% else %}
+            <!-- Display message when no posts are found -->
+            <div class="alert alert-warning" role="alert">
+                No posts found matching the search criteria.
+            </div>
+            {% endif %}
+            <div class="text-center">
+                <nav aria-label="Page navigation example">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item {% if not posts.has_prev %} disabled {% endif %}">
+                            <a class="page-link" href="{{ url_for('users.forum', page=posts.prev_num) }}" tabindex="-1"
+                               aria-disabled="true">Previous</a>
+                        </li>
+                        {% for page_num in posts.iter_pages() %}
+                        <li class="page-item {% if page_num == posts.page %} active {% endif %}">
+                            <a class="page-link" href="{{ url_for('users.forum', page=page_num) }}">{{ page_num }}</a>
+                        </li>
+                        {% endfor %}
+                        <li class="page-item {% if not posts.has_next %} disabled {% endif %}">
+                            <a class="page-link" href="{{ url_for('users.forum', page=posts.next_num) }}">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        <!-- Sidebar content -->
+        <div class="col-lg-3">
+            <div class="sticky-top mt-0">
+                <div class="text-center mb-3">
+                    <!-- AUTO COMPLETE DROPDOWN -->
+                    <form method="POST" action="{{ url_for('users.filter_posts')}}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <select name="topic" class="selectpicker form-control border-0 mb-3 px-4 py-4 rounded shadow" onchange="this.form.submit()">
+                            <option value="filterby">Filter by Topic</option>
+                            {% for topic in posts %}
+                            <option value="{{ topic.topic }}" {% if selected_topic == topic.topic %} selected {% endif %}>{{ topic.topic }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </div>
+                <div class="bg-white mb-3" style="font-size: 10px;">
+                    <h4 class="px-3 py-2 op-5 m-0 text-center">Active Topics</h4>
+                    <hr class="m-0">
+                    {% for post in active_topics %}
+                    <h5 style="font-size: 15px;">
+                        <a class="article-title" href="{{ url_for('users.post', post_id=post.id) }}"
+                           onclick="incrementViewCount({{ post.id }})">{{ post.subtopic }}</a>
+                    </h5>
+                    <p class="text-sm">
+                        <span class="op-6">Posted</span> {{ format_time_difference(current_date-post.date_posted)
+                        }} <span class="op-6">by</span> <a class="text-black"
+                                                           href="{{ url_for('users.user_posts', username=post.author.username) }}">{{ post.author.username }}</a>
+                    </p>
+                    {% endfor %}
+                </div>
+                <div class="bg-white text-sm sticky-top stats-block">
+                    <h4 class="px-3 py-1 op-5 m-0 roboto-bold text-center">Stats</h4>
+                    <hr class="my-0">
+                    <div class="row text-center d-flex flex-row op-7 mx-0" style="font-size: 15px;">
+                        <div class="col-sm-6 flex-ew text-center border-bottom border-right">
+                            <a class="d-block lead font-weight-bold" href="#">{{all_topics_count}}</a> Topics
+                        </div>
+                        <div class="col-sm-6 col flex-ew text-center border-bottom mx-0">
+                            <a class="d-block lead font-weight-bold"
+                               href="#">{{all_post}}</a> Posts
+                        </div>
+                    </div>
+                    <div class="row d-flex flex-row op-7">
+                        <div class="col-sm-6 flex-ew text-center border-right mx-0" style="font-size: 15px;">
+                            <a class="d-block lead font-weight-bold" href="#">{{all_users_count}}</a> Members
+                        </div>
+                        <div class="col-sm-6 flex-ew text-center mx-0">
+                            <a class="d-block lead font-weight-bold"
+                               href="#">{{new_member}}</a> Newest Member
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <!-- Sidebar content -->
-    <div class="col-lg-3">
-      <div class="sticky-top mt-0">
-        <div class="text-center mb-3">
-          <!-- AUTO COMPLETE DROPDOWN -->
-          <form method="POST" action="{{ url_for('users.filter_posts')}}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <select name="topic" class="selectpicker form-control border-0 mb-3 px-4 py-4 rounded shadow" onchange="this.form.submit()">
-                <option value="filterby">Filter by Topic</option>
-                {% for topic in posts %}
-                    <option value="{{ topic.topic }}" {% if selected_topic == topic.topic %} selected {% endif %}>{{ topic.topic }}</option>
-                {% endfor %}
-            </select>
-        </form>             
-        </div>
-        <div class="bg-white mb-3" style="font-size: 10px;">
-          <h4 class="px-3 py-2 op-5 m-0 text-center">Active Topics</h4>
-          <hr class="m-0">
-          {% for post in active_topics %}
-          <h5 style="font-size: 15px;">
-            <a class="article-title" href="{{ url_for('users.post', post_id=post.id) }}"
-              onclick="incrementViewCount({{ post.id }})">{{ post.subtopic }}</a>
-          </h5>
-          <p class="text-sm"><span class="op-6">Posted</span> {{ format_time_difference(current_date-post.date_posted)
-            }} <span class="op-6">by</span> <a class="text-black"
-              href="{{ url_for('users.user_posts', username=post.author.username) }}">{{ post.author.username }}</a></p>
-          {% endfor %}
-        </div>
-        <div class="bg-white text-sm sticky-top stats-block">
-          <h4 class="px-3 py-1 op-5 m-0 roboto-bold text-center">Stats</h4>
-          <hr class="my-0">
-          <div class="row text-center d-flex flex-row op-7 mx-0" style="font-size: 15px;">
-            <div class="col-sm-6 flex-ew text-center border-bottom border-right"> <a
-                class="d-block lead font-weight-bold" href="#">{{all_topics_count}}</a> Topics </div>
-            <div class="col-sm-6 col flex-ew text-center border-bottom mx-0"> <a class="d-block lead font-weight-bold"
-                href="#">{{all_post}}</a> Posts </div>
-          </div>
-          <div class="row d-flex flex-row op-7">
-            <div class="col-sm-6 flex-ew text-center border-right mx-0" style="font-size: 15px;"> <a
-                class="d-block lead font-weight-bold" href="#">{{all_users_count}}</a> Members </div>
-            <div class="col-sm-6 flex-ew text-center mx-0"> <a class="d-block lead font-weight-bold"
-                href="#">{{new_member}}</a> Newest Member </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
-<br><br><br>
+<br>
+<br>
+<br>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 <script>
-  $('img[data-enlargeable]').addClass('img-enlargeable').click(function() {
-  var src = $(this).attr('src');
-  var modal;
+    $('img[data-enlargeable]').addClass('img-enlargeable').click(function () {
+        var src = $(this).attr('src');
+        var modal;
 
-  function removeModal() {
-    modal.remove();
-    $('body').off('keyup.modal-close');
-  }
-  modal = $('<div>').css({
-    background: 'RGBA(0,0,0,.5) url(' + src + ') no-repeat center',
-    backgroundSize: 'contain',
-    width: '100%',
-    height: '100%',
-    position: 'fixed',
-    zIndex: '10000',
-    top: '0',
-    left: '0',
-    cursor: 'zoom-out'
-  }).click(function() {
-    removeModal();
-  }).appendTo('body');
-  //handling ESC
-  $('body').on('keyup.modal-close', function(e) {
-    if (e.key === 'Escape') {
-      removeModal();
-    }
-  });
-});
+        function removeModal() {
+            modal.remove();
+            $('body').off('keyup.modal-close');
+        }
+        modal = $('<div>').css({
+            background: 'RGBA(0,0,0,.5) url(' + src + ') no-repeat center',
+            backgroundSize: 'contain',
+            width: '100%',
+            height: '100%',
+            position: 'fixed',
+            zIndex: '10000',
+            top: '0',
+            left: '0',
+            cursor: 'zoom-out'
+        }).click(function () {
+            removeModal();
+        }).appendTo('body');
+        //handling ESC
+        $('body').on('keyup.modal-close', function (e) {
+            if (e.key === 'Escape') {
+                removeModal();
+            }
+        });
+    });
 </script>
 
 <script>
@@ -199,19 +220,19 @@
 </script>
 
 <script>
-  const sorting = document.querySelector('.selectpicker');
-const commentSorting = document.querySelector('.selectpicker');
-const sortingchoices = new Choices(sorting, {
-    placeholder: false,
-    itemSelectText: ''
-});
+    const sorting = document.querySelector('.selectpicker');
+    const commentSorting = document.querySelector('.selectpicker');
+    const sortingchoices = new Choices(sorting, {
+        placeholder: false,
+        itemSelectText: ''
+    });
 
 
-// Trick to apply your custom classes to generated dropdown menu
-let sortingClass = sorting.getAttribute('class');
-window.onload= function () {
-    sorting.parentElement.setAttribute('class', sortingClass);
-}
+    // Trick to apply your custom classes to generated dropdown menu
+    let sortingClass = sorting.getAttribute('class');
+    window.onload = function () {
+        sorting.parentElement.setAttribute('class', sortingClass);
+    }
 
 </script>
 <script>
@@ -239,19 +260,19 @@ window.onload= function () {
 </script>
 
 <script>
-  // Function to hide messages after a delay
-  function hideMessages() {
-    var messagesElements = document.querySelectorAll('.alert');
-    if (messagesElements) {
-      setTimeout(function () {
-        messagesElements.forEach(function (element) {
-          element.style.display = 'none';
-        });
-      }, 3000);  // 5000 milliseconds (5 seconds)
+    // Function to hide messages after a delay
+    function hideMessages() {
+        var messagesElements = document.querySelectorAll('.alert');
+        if (messagesElements) {
+            setTimeout(function () {
+                messagesElements.forEach(function (element) {
+                    element.style.display = 'none';
+                });
+            }, 3000);  // 5000 milliseconds (5 seconds)
+        }
     }
-  }
 
-  // Call the function when the page loads
-  window.onload = hideMessages;
+    // Call the function when the page loads
+    window.onload = hideMessages;
 </script>
 {% endblock %}

@@ -6,269 +6,249 @@
 
 <style>
 
-  .swiper {
-      width: 100%;
-      height: 100%;
+    .swiper {
+        width: 100%;
+        height: 100%;
+    }
 
-  }
+    .swiper-wrapper {
+        height: 70vh;
+        /* margin-bottom: 200vh */
+    }
 
-  .swiper-wrapper {
-      height: 70vh;
-      /* margin-bottom: 200vh */
-  }
+    .swiper-slide {
+        text-align: center;
+        font-size: 18px;
+        /* height: 90vh; */
+        padding-top: 26px;
+        display: flex;
+        justify-content: center;
+        background-size: cover;
+        align-items: center;
+        background-repeat: no-repeat;
+    }
 
-  .swiper-slide {
-      text-align: center;
-      font-size: 18px;
-      /* height: 90vh; */
-      padding-top: 26px;
-      display: flex;
-      justify-content: center;
-      background-size: cover;
-      align-items: center;
-      background-repeat: no-repeat;
-  }
+        .swiper-slide img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background-color: #141212
+        }
 
-  .swiper-slide img {
-      display: block;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      background-color: #141212
+    .bottom-left {
+        position: absolute;
+        bottom: 8px;
+        left: 16px;
+    }
 
-  }
+    .text-center {
+        font-size: 40px;
+        font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    }
 
-  .bottom-left {
-      position: absolute;
-      bottom: 8px;
-      left: 16px;
-  }
-
-  .text-center {
-    font-size: 40px;
-    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
-  }
-
-  .text-orange {
-      color:#494a4b;
-      font-size: 25px;
-      margin-top: 10px;
-      font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
-      /* Adjust the top margin */
-      margin-bottom: 10px;
-      /* Adjust the bottom margin */
-  }
+    .text-orange {
+        color: #494a4b;
+        font-size: 25px;
+        margin-top: 10px;
+        font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+        /* Adjust the top margin */
+        margin-bottom: 10px;
+        /* Adjust the bottom margin */
+    }
 
 
-  .display-3 {
-      font-size: 2.5rem;
-      /* Adjust as needed */
-  }
+    .display-3 {
+        font-size: 2.5rem;
+        /* Adjust as needed */
+    }
 
-  .button-slider {
-      background-color: transparent;
-      border: 0.001px solid #f0eae7;
-      color: #faf8f7;
-      width: 7em;
-      height: 33px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      line-height: 35px;
-      text-decoration: none;
-      border-radius: 3px;
-      margin-top: 10px;
-      font-size: 16px;
-      padding-left: 12px;
-      margin-left: 10px;
-  }
+    .button-slider {
+        background-color: transparent;
+        border: 0.001px solid #f0eae7;
+        color: #faf8f7;
+        width: 7em;
+        height: 33px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        line-height: 35px;
+        text-decoration: none;
+        border-radius: 3px;
+        margin-top: 10px;
+        font-size: 16px;
+        padding-left: 12px;
+        margin-left: 10px;
+    }
 
 
-  .button-slider:hover {
-      background-color: #ff6600;
-      box-shadow: #141212;
-      /* Change color on hover */
-  }
+        .button-slider:hover {
+            background-color: #ff6600;
+            box-shadow: #141212;
+            /* Change color on hover */
+        }
 </style>
-      {{ render_messages() }}
-        <!-- ....................CAOUROSAL ..j -->
-        <div class="swiper mySwiper">
-          <div class="swiper-wrapper">
-              <div class="swiper-slide">
-                  <div class="video-background">
-                      <video playsinline="playsinline" autoplay="autoplay" muted="muted" loop="loop">
-                          <source src="{{ url_for('static', filename='assets/images/animation.mp4')}}" type="video/mp4">
-                      </video>
-                      <div class="content">
-                          <div class="p-5 custom-container">
-                              <h7 class="text-center">Science, Technology, Engineering and Mathematics</h1>
-                                  <h6 class="text-orange text-uppercase mb-md-3">Nurturing Rural Communities</h6>
+{{ render_messages() }}
+<!-- ....................CAOUROSAL ..j -->
+<div class="swiper mySwiper">
+    <div class="swiper-wrapper">
+        <div class="swiper-slide">
+            <div class="video-background">
+                <video playsinline="playsinline" autoplay="autoplay" muted="muted" loop="loop">
+                    <source src="{{ url_for('static', filename='assets/images/animation.mp4')}}" type="video/mp4">
+                </video>
+                <div class="content">
+                    <div class="p-5 custom-container">
+                        <h7 class="text-center">
+                            Science, Technology, Engineering and Mathematics</h1>
+                            <h6 class="text-orange text-uppercase mb-md-3">Nurturing Rural Communities</h6>
 
-                          </div>
-                      </div>
-                  </div>
-              </div>
-              <div class="swiper-button-next"></div>
-              <div class="swiper-button-prev"></div>
-              <div class="swiper-pagination"></div>
-          </div>
-      </div>
-        <br><br><br>
-        <h3 class="text-center">Site Content</h3>
-        <br>
-        <div class="row row-cols-1 row-cols-md-3 g-4">
-            <div class="col">
-              <div class="card h-100">
-                <a href="{{ url_for('users.access_content')}}"><img src="{{ url_for('static', filename='assets/images/subject_content.jpeg') }}" height="238" class="card-img-top" alt="..."></a>
-                <div class="card-body">
-                  <h5 class="card-title">SUBJECT CONTENT</h5>
-                  <p>You will find notes, study guides and links to videos here. The material is organized as per the topics in the CAPs curriculum. Some content is available for download whilst others are available as links to selected sites.  Currently we only offer content for grade 12 Maths and Physical Science. We intend to expand the scope to other matric subjects in the near future.</p>
-                  <div class="button-container">
-                  <a href="{{ url_for('users.access_content')}}" class="read-more-button">
-                    Read More
-                    <span class="arrow">➔</span>
-                </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="col">
-              <div class="card h-100">
-                <img src="{{ url_for('static', filename='assets/images/survey.jpg') }}" height="238" class="card-img-top" alt="...">
-                <div class="card-body">
-                  <h5 class="card-title">TAKE A SURVEY</h5>
-                  <p>This site is intended to be responsive to the needs of its users. As professional researchers we believe the best way to understand your needs is to ask you. Please take the time to complete surveys that you may find here. Ultimately you are intended to be the biggest beneficiary of this sacrifice of your time.</p><br>
-                  <div class="button-container">
-                  <a href="#" class="read-more-button">
-                    Read More
-                    <span class="arrow">➔</span>
-                </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="col">
-              <div class="card h-100">
-                <a href="{{ url_for('users.practice') }}"><img src="{{ url_for('static', filename='assets/images/practice.jpg') }}" height="238" class="card-img-top" alt="..."></a> 
-                <div class="card-body">
-                  <h5 class="card-title">PRACTICE</h5> 
-                  <p>Here you will find worksheets, problems and solutions. The content is arranged as per the CAPs curriculum. You are advised to master these problems before progressing to the past year papers.</p><br><br><br>
-                  <div class="button-container">
-                  <a href="{{ url_for('users.practice')}}" class="read-more-button">
-                    Read More
-                    <span class="arrow">➔</span>
-                </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="col">
-              <div class="card h-100">
-                <a href="{{ url_for('users.live_classes')}}"><img src="{{ url_for('static', filename='assets/images/live.jpg') }}" height="238" class="card-img-top" alt="..."></a> 
-                <div class="card-body">
-                  <h5 class="card-title">VIRTUAL CLASSES</h5> 
-                  <p>Qualified volunteers, who are vetted by us, provide live classes on topics requested by members of our community. You will need to install MS Teams on your device and join using the link on the scheduled date and time. The classes are interactive and you can ask questions.</p><br><br>
-                  <div class="button-container">
-                  <a href="{{ url_for('users.live_classes')}}" class="read-more-button">
-                    Read More
-                    <span class="arrow">➔</span>
-                </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="col">
-              <div class="card h-100">
-                <a href="{{ url_for('users.papers_by_year')}}"><img src="{{ url_for('static', filename='assets/images/past-papers.png') }}" height="238" class="card-img-top" alt="..."></a>
-                <div class="card-body">
-                  <h5 class="card-title">PAST YEAR PAPERS</h5>
-                    <p>A complete repository of the past 20 years of NSC Matric papers and memos are available here.</p><br><br><br><br>
-                    <div class="button-container">
-                    <a href="{{ url_for('users.papers_by_year')}}" class="read-more-button">
-                      Read More
-                      <span class="arrow">➔</span>
-                  </a>
                     </div>
                 </div>
-              </div>
-          </div>
-          <div class="col">
-            <div class="card h-100">
-              <a href="{{ url_for('users.forum')}}"><img src="{{ url_for('static', filename='assets/images/forum.jpeg') }}" height="238" class="card-img-top" alt="..."></a> 
-              <div class="card-body">
+            </div>
+        </div>
+        <div class="swiper-button-next"></div>
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-pagination"></div>
+    </div>
+</div>
+<br>
+<br>
+<br>
+<h3 class="text-center">Site Content</h3>
+<br>
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    <div class="col">
+        <div class="card h-100">
+            <a href="{{ url_for('users.access_content')}}"><img src="{{ url_for('static', filename='assets/images/subject_content.jpeg') }}" height="238" class="card-img-top" alt="..."></a>
+            <div class="card-body">
+                <h5 class="card-title">SUBJECT CONTENT</h5>
+                <p>You will find notes, study guides and links to videos here. The material is organized as per the topics in the CAPs curriculum. Some content is available for download whilst others are available as links to selected sites.  Currently we only offer content for grade 12 Maths and Physical Science. We intend to expand the scope to other matric subjects in the near future.</p>
+                <div class="button-container">
+                    <a href="{{ url_for('users.access_content')}}" class="read-more-button">
+                        Read More
+                        <span class="arrow">➔</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card h-100">
+            <img src="{{ url_for('static', filename='assets/images/survey.jpg') }}" height="238" class="card-img-top" alt="...">
+            <div class="card-body">
+                <h5 class="card-title">TAKE A SURVEY</h5>
+                <p>This site is intended to be responsive to the needs of its users. As professional researchers we believe the best way to understand your needs is to ask you. Please take the time to complete surveys that you may find here. Ultimately you are intended to be the biggest beneficiary of this sacrifice of your time.</p><br>
+                <div class="button-container">
+                    <a href="#" class="read-more-button">
+                        Read More
+                        <span class="arrow">➔</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card h-100">
+            <a href="{{ url_for('users.practice') }}"><img src="{{ url_for('static', filename='assets/images/practice.jpg') }}" height="238" class="card-img-top" alt="..."></a>
+            <div class="card-body">
+                <h5 class="card-title">PRACTICE</h5>
+                <p>Here you will find worksheets, problems and solutions. The content is arranged as per the CAPs curriculum. You are advised to master these problems before progressing to the past year papers.</p><br><br><br>
+                <div class="button-container">
+                    <a href="{{ url_for('users.practice')}}" class="read-more-button">
+                        Read More
+                        <span class="arrow">➔</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card h-100">
+            <a href="{{ url_for('users.live_classes')}}"><img src="{{ url_for('static', filename='assets/images/live.jpg') }}" height="238" class="card-img-top" alt="..."></a>
+            <div class="card-body">
+                <h5 class="card-title">VIRTUAL CLASSES</h5>
+                <p>Qualified volunteers, who are vetted by us, provide live classes on topics requested by members of our community. You will need to install MS Teams on your device and join using the link on the scheduled date and time. The classes are interactive and you can ask questions.</p><br><br>
+                <div class="button-container">
+                    <a href="{{ url_for('users.live_classes')}}" class="read-more-button">
+                        Read More
+                        <span class="arrow">➔</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card h-100">
+            <a href="{{ url_for('users.papers_by_year', paper_type=paper_combinations.paper_type, stem=paper_combinations.stem)}}"><img src="{{ url_for('static', filename='assets/images/past-papers.png') }}" height="238" class="card-img-top" alt="..."></a>
+            <div class="card-body">
+                <h5 class="card-title">PAST YEAR PAPERS</h5>
+                <p>A complete repository of the past 20 years of NSC Matric papers and memos are available here.</p><br><br><br><br>
+                <div class="button-container">
+                    <a href="{{ url_for('users.view_papers')}}" class="read-more-button">
+                        Read More
+                        <span class="arrow">➔</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card h-100">
+            <a href="{{ url_for('users.forum')}}"><img src="{{ url_for('static', filename='assets/images/forum.jpeg') }}" height="238" class="card-img-top" alt="..."></a>
+            <div class="card-body">
                 <h5 class="card-title">FORUM</h5>
                 <p>The forum is the medium through which our community engages and interacts. Users are encouraged to share problems as well as solutions to problems posted on the site. The objective is to ensure that every learner is able to access support for any maths and science problem they may have.  Please use the forum responsibly; it is moderated by our admin to ensure a safe space for all users.</p>
                 <div class="button-container">
-                <a href="{{ url_for('users.forum') }}" class="read-more-button">
-                  Read More
-                  <span class="arrow">➔</span>
-              </a>
+                    <a href="{{ url_for('users.forum') }}" class="read-more-button">
+                        Read More
+                        <span class="arrow">➔</span>
+                    </a>
                 </div>
-              </div>
             </div>
-          </div>
+        </div>
     </div>
-    <br><br><br>
-    
+</div>
+<br>
+<br>
+<br>
+
 <!-- Initialize Swiper -->
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 <script>
-  var swiper = new Swiper(".mySwiper", {
-      spaceBetween: 30,
-      centeredSlides: true,
-      autoplay: {
-          delay: 2500,
-          disableOnInteraction: false,
-      },
-      pagination: {
-          el: ".swiper-pagination",
-          clickable: true,
-      },
-      navigation: {
-          nextEl: ".swiper-button-next",
-          prevEl: ".swiper-button-prev",
-      },
-  });
-
-  // create method that counts the number of clicks, events,type of event take 
-  // Function to count clicks on the HTML button
-  function countClicks() {
-      // Get the HTML button element by its class name
-      var button = document.querySelector('.msg-btn');
-
-      // Initialize a variable to store the count of clicks
-      var clickCount = 0;
-
-      // Add a click event listener to the button
-      button.addEventListener('click', function () {
-          // Increment the click count each time the button is clicked
-          clickCount++;
-
-          // Log the current click count to the console
-          console.log('Number of clicks: ' + clickCount);
-      });
-  }
-
-  // Call the function to start counting clicks
-  countClicks();
-
+    var swiper = new Swiper(".mySwiper", {
+        spaceBetween: 30,
+        centeredSlides: true,
+        autoplay: {
+            delay: 2500,
+            disableOnInteraction: false,
+        },
+        pagination: {
+            el: ".swiper-pagination",
+            clickable: true,
+        },
+        navigation: {
+            nextEl: ".swiper-button-next",
+            prevEl: ".swiper-button-prev",
+        },
+    });
 </script>
 
 <script>
-  // Function to hide messages after a delay
-  function hideMessages() {
-      var messagesElements = document.querySelectorAll('.alert');
-      if (messagesElements) {
-          setTimeout(function() {
-              messagesElements.forEach(function(element) {
-                  element.style.display = 'none';
-              });
-          }, 3000);  // 5000 milliseconds (5 seconds)
-      }
-  }
+    // Function to hide messages after a delay
+    function hideMessages() {
+        var messagesElements = document.querySelectorAll('.alert');
+        if (messagesElements) {
+            setTimeout(function () {
+                messagesElements.forEach(function (element) {
+                    element.style.display = 'none';
+                });
+            }, 3000);  // 5000 milliseconds (5 seconds)
+        }
+    }
 
-  // Call the function when the page loads
-  window.onload = hideMessages;
+    // Call the function when the page loads
+    window.onload = hideMessages;
 </script>
 {% endblock %}

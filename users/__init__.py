@@ -1,71 +1,68 @@
-import os
+from http import HTTPStatus
+from types import MappingProxyType
+
+from sqlalchemy.exc import DatabaseError
+from werkzeug.exceptions import (
+    BadRequest,
+    Unauthorized,
+    Forbidden,
+    MethodNotAllowed,
+    NotFound,
+    InternalServerError,
+    ServiceUnavailable,
+)
+
 from flask import Flask as FlaskAuth
-from pathlib import Path
-from dotenv import load_dotenv
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-MEDIA_ROOT = os.path.join(BASE_DIR, "users", "static", "assets")
-
-UPLOAD_FOLDER = os.path.join(MEDIA_ROOT, "profile")
-UPLOAD_FOLDER_SUPPORTING_DOCUMENTS = os.path.join(MEDIA_ROOT, "supporting_documents")
-UPLOAD_FOLDER_LOCAL_FILES = os.path.join(MEDIA_ROOT, "local_files")
-UPLOAD_FOLDER_PROBLEM_IMAGES = os.path.join(MEDIA_ROOT, "problems")
 
 
-load_dotenv(os.path.join(BASE_DIR, ".env"))
-
-
-def create_app():
+def create_app(config_type):
     """
     Create and configure the Flask application instance.
     """
     app = FlaskAuth(__name__, template_folder="templates")
-    
+
     # application configuration.
-    config_application(app)
+    config_application(app, config_type)
+
     # configure application extension.
     config_extention(app)
+
     # configure application blueprints.
     config_blueprint(app)
+
     # configure error handlers.
     config_errorhandler(app)
-    
-
 
     return app
 
 
-def config_application(app):
-    # Application configuration
-    app.config["DEBUG"] = False
-    app.config["TESTING"] = False
-    app.config["SECRET_KEY"] = os.getenv('SECRET_KEY', None)
-    app.config["BOOTSTRAP_BOOTSWATCH_THEME"] = 'Pulse'
+def config_application(app, config_type):
+    """
+    Configure the Flask application based on the specified configuration type.
+    """
 
-    # WTF Form and recaptcha configuration
-    app.config["WTF_CSRF_SECRET_KEY"] = os.getenv('CSRF_SECRET_KEY', None)
-    app.config["WTF_CSRF_ENABLED"] = True
-    app.config["RECAPTCHA_PUBLIC_KEY"] = os.getenv('PUBLIC_KEY', None)
-    app.config["RECAPTCHA_PRIVATE_KEY"] = os.getenv('RECAPTCHA_KEY', None)
+    import config as conf
 
-    # SQLAlchemy configuration
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv('DATABASE_URI', None)
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    if not config_type:
+        raise RuntimeError("Configuration type must be provided.")
 
-    # Flask-Mail configuration
-    app.config["MAIL_SERVER"] = os.getenv('MAIL_SERVER', None)
-    app.config["MAIL_PORT"] = 587
-    app.config["MAIL_USE_TLS"] = True
-    app.config["MAIL_USERNAME"] = os.getenv('MAIL_USERNAME', None)
-    app.config["MAIL_PASSWORD"] = os.getenv('MAIL_PASSWORD', None)
-    
-    # Set the UPLOAD_FOLDER configuration
-    app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-    app.config["UPLOAD_FOLDER_SUPPORTING_DOCUMENTS"] = UPLOAD_FOLDER_SUPPORTING_DOCUMENTS
-    app.config["UPLOAD_FOLDER_LOCAL_FILES"] = UPLOAD_FOLDER_LOCAL_FILES
-    app.config["UPLOAD_FOLDER_PROBLEM_IMAGES"] = UPLOAD_FOLDER_PROBLEM_IMAGES
-    
+    # Immutable mapping of configuration types to their corresponding config objects.
+    config_map = MappingProxyType(
+        {
+            "development": conf.development,
+            "production": conf.production,
+            "testing": conf.testing,
+        }
+    )
+
+    # Get the configuration object based on the provided `config_type`.
+    config = config_map.get(config_type)
+
+    if not config:
+        raise RuntimeError("Invalid configuration type: %s" % config_type)
+
+    # Application configuration from object.
+    app.config.from_object(config)
 
 
 def config_blueprint(app):
@@ -73,6 +70,7 @@ def config_blueprint(app):
     Configure and register blueprints with the Flask application.
     """
     from .views import users
+
     app.register_blueprint(users)
 
 
@@ -93,10 +91,11 @@ def config_extention(app):
     migrate.init_app(app, db=database)
     csrf.init_app(app)
     mail.init_app(app)
-    config_manager(login_manager)
+
+    config_login_manager(login_manager)
 
 
-def config_manager(manager):
+def config_login_manager(manager):
     """
     Configure with Flask-Login manager.
     """
@@ -107,41 +106,41 @@ def config_manager(manager):
     manager.login_view = "users.login"
 
     @manager.user_loader
-    def user_loader(id):
-        return User.query.get_or_404(id)
+    def user_loader(user_id):
+        return User.get_user_by_id(user_id)
 
 
 def config_errorhandler(app):
     """
     Configure error handlers for application.
     """
-    from flask import render_template
-    from flask import redirect
-    from flask import url_for
-    from flask import flash
+    from flask import flash, render_template, redirect, request, url_for
 
-    @app.errorhandler(400)
+    @app.errorhandler(BadRequest)
     def bad_request(e):
-        flash("Something went wrong.", 'error')
-        return redirect(url_for('users.home'))
+        flash("Oops! There was a problem with your request. Please try again.", "error")
+        return redirect(url_for("users.home"))
 
-    @app.errorhandler(401)
+    @app.errorhandler(Unauthorized)
     def unauthorized(e):
-        flash("You are not authorized to perform this action.", 'error')
-        return redirect(url_for('users.home'))
+        flash("You are not authorized to access this resource.", "error")
+        return redirect(url_for("users.home"))
 
-    @app.errorhandler(404)
+    @app.errorhandler(NotFound)
     def page_not_found(e):
-        return render_template('error.html'), 404
+        return render_template("error.html"), HTTPStatus.NOT_FOUND
 
-    @app.errorhandler(405)
+    @app.errorhandler(MethodNotAllowed)
     def method_not_allowed(e):
-        flash("Method not allowed.", 'error')
-        return redirect(url_for('users.home'))
+        flash("Method not allowed.", "error")
+        return redirect(url_for("users.home"))
 
-    @app.errorhandler(500)
-    def database_error(e):
-        flash("Internal server error.", 'error')
-        return redirect(url_for('users.home'))
-    
-    
+    @app.errorhandler(InternalServerError)
+    def internal_server_error(e):
+        flash("Something went wrong with the internal server.", "error")
+        return redirect(url_for("users.home"))
+
+    @app.errorhandler(ServiceUnavailable)
+    def service_unavailable(e):
+        flash(e.description, "error")
+        return redirect(request.path or url_for("users.login"))

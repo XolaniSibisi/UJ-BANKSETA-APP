@@ -1,4 +1,4 @@
-Dear Volunteer,
+Dear {{ username }},
 
 We are pleased to inform you that your application has been accepted. Thank you for your interest in volunteering with us. We appreciate your dedication and look forward to having you on board.
 

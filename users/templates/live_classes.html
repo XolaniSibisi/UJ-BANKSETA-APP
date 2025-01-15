@@ -29,7 +29,7 @@
                                 <div style="display: flex; justify-content: center;">
                                     <a href="{{ url_for('users.attend_event', slot_id=slot.id) }}" class="btn btn-primary">Attend</a>
                                 </div>
-                            {% elif current_user.role == 'volunteer' %}
+                            {% elif current_user.role == 'tutor' %}
                                 <div style="display: flex; justify-content: center;">
                                     {% if slot.status == 'available' %}
                                         <a href="{{ url_for('users.take_slot', slot_id=slot.id) }}" class="btn btn-primary">Take Slot</a>

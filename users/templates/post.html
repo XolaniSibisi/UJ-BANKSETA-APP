@@ -5,140 +5,157 @@
 
 {% block body %}
 <div class="container">
-  <h1 class="mt-5 text-center" style="padding-top: 1.5rem;">Post and Replies</h1>
-  <article class="media content-section mt-2">
-    <div class="container media-body">
-      <div class="article-metadata">
-        {{ render_messages() }}
-        <h2 class="article-title">{{ post.subtopic }}</h2>
-        {% if post_profile and post_profile.avatar %}
-        <img class="rounded-circle" style="width: 40px;height: 40px;"
-          src="{{ url_for('static', filename='assets/profile/' + post_profile.avatar) }}">
-        {% else %}
-        <img src="{{ url_for('static', filename='assets/images/default_avator.jpg') }}" alt="profile image"
-          class="rounded-circle" style="width: 40px;height: 40px;" />
-        {% endif %}
-        <a class="mr-2" href="{{url_for('users.user_posts',username=post.author.username)}}">{{ post.author.username
-          }}</a> - 
-        <small class="text-muted">{{ format_time_difference(current_date - post.date_posted) }}</small>
-        <p class="article-content">{{ post.content }}</p>
-        {% if post.author == current_user %}
-        <div>
-          <a class="btn btn-primary btn-sm mt-1 mb-1"
-            href="{{ url_for('users.update_post',post_id=post.id)}}">Update</a>
-          <button type="button" class="btn btn-danger btn-sm m-1" data-toggle="modal"
-            data-target="#deleteModal">Delete</button>
+    <h1 class="mt-5 text-center" style="padding-top: 1.5rem;">Post and Replies</h1>
+    <article class="media content-section mt-2">
+        <div class="container media-body">
+            <div class="article-metadata">
+                {{ render_messages() }}
+                <h2 class="article-title">{{ post.subtopic }}</h2>
+                {% if post_profile and post_profile.avatar %}
+                <img class="rounded-circle" style="width: 40px;height: 40px;"
+                     src="{{ url_for('static', filename='assets/profile/' + post_profile.avatar) }}">
+                {% else %}
+                <img src="{{ url_for('static', filename='assets/images/default_avator.jpg') }}" alt="profile image"
+                     class="rounded-circle" style="width: 40px;height: 40px;" />
+                {% endif %}
+                <a class="mr-2" href="{{url_for('users.user_posts',username=post.author.username)}}">
+                    {{ post.author.username }}
+                </a> -
+                <small class="text-muted">{{ format_time_difference(current_date - post.date_posted) }}</small>
+                <p class="article-content">{{ post.content }}</p>
+                {% if post.author == current_user %}
+                <div>
+                    <a class="btn btn-primary btn-sm mt-1 mb-1"
+                       href="{{ url_for('users.update_post',post_id=post.id)}}">Update</a>
+                    <button type="button" class="btn btn-danger btn-sm m-1" data-toggle="modal"
+                            data-target="#deleteModal">
+                        Delete
+                    </button>
+                </div>
+                {% elif current_user.is_authenticated and current_user.is_admin() %}
+                <div>
+                    <button type="button" class="btn btn-danger btn-sm m-1" data-toggle="modal"
+                            data-target="#deleteModal">
+                        Delete
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+            <div class="col-md-4 op-7">
+                <div class="row text-center op-7">
+                    <div class="col px-1">
+                        {% if current_user.id in post.likes|map(attribute="user_id")|list %}
+                        <i class="ion-ios-heart icon-1x" id="like-button-{{post.id}}" onclick="like({{post.id}})"></i>
+                        {% else %}
+                        <i class="ion-ios-heart-outline icon-1x" id="like-button-{{post.id}}" onclick="like({{post.id}})"></i>
+                        {% endif %}
+                    </div>
+                    <div class="col px-1">
+                        <i class="ion-ios-chatboxes-outline icon-1x"></i> <span class="d-block text-sm">
+                            {{
+              post.comments|length
+                            }}
+                        </span>
+                    </div>
+                    <div id="viewCount_{{ post.id }}" class="col px-1">
+                        <i class="ion-ios-eye-outline icon-1x"></i>
+                        <span id="viewCountValue_{{ post.id }}" class="d-block text-sm">{{ post.views }}</span>
+                    </div>
+                </div>
+            </div>
         </div>
-        {% elif current_user.is_authenticated and current_user.is_admin() %}
-        <div>
-          <button type="button" class="btn btn-danger btn-sm m-1" data-toggle="modal"
-            data-target="#deleteModal">Delete</button>
+        <div class="mt-3">
+            <h5>Comments ({{ comments | length }})</h5>
+            {% for comment in comments %}
+            <div class="media">
+                <div class="media-body">
+                    {% if comment_profiles[comment.id] and comment_profiles[comment.id].avatar %}
+                    <img class="rounded-circle" style="width: 40px;height: 40px;"
+                         src="{{ url_for('static', filename='assets/profile/' + comment_profiles[comment.id].avatar) }}">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='assets/images/default_avator.jpg') }}" alt="profile image"
+                         class="rounded-circle" style="width: 40px;height: 40px;" />
+                    {% endif %}
+                    <a class="mr-2">{{ comment.author.username }}</a> -
+                    <small class="text-muted">{{ format_time_difference(current_date - comment.date_posted) }}</small>
+                    <p>{{ comment.body }}</p>
+                    {% if comment.author == current_user %}
+                    <div>
+                        <a class="btn btn-primary btn-sm mt-1 mb-1"
+                           href="{{ url_for('users.update_comment', post_id=post.id, comment_id=comment.id)}}">Update</a>
+                        <button type="button" class="btn btn-danger btn-sm m-1" data-toggle="modal"
+                                data-target="#deleteCommentModal-{{ comment.id }}">
+                            Delete
+                        </button>
+                    </div>
+                    {% elif current_user.is_authenticated and current_user.is_admin() %}
+                    <div>
+                        <button type="button" class="btn btn-danger btn-sm m-1" data-toggle="modal"
+                                data-target="#deleteCommentModal-{{ comment.id }}">
+                            Delete
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <!-- Modal for deleting comment -->
+            <div class="modal fade" id="deleteCommentModal-{{ comment.id }}" tabindex="-1" role="dialog"
+                 aria-labelledby="deleteCommentModalLabel-{{ comment.id }}" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deleteCommentModalLabel-{{ comment.id }}">Delete Comment ?</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <form action="{{ url_for('users.delete_comment', comment_id=comment.id) }}" method="POST">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                <input class="btn btn-danger" type="submit" value="Delete">
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
         </div>
-        {% endif %}
-      </div>
-      <div class="col-md-4 op-7">
-        <div class="row text-center op-7">
-          <div class="col px-1">
-            {% if current_user.id in post.likes|map(attribute="user_id")|list %}
-            <i class="ion-ios-heart icon-1x" id="like-button-{{post.id}}" onclick="like({{post.id}})"></i>
-            {% else %}
-            <i class="ion-ios-heart-outline icon-1x" id="like-button-{{post.id}}" onclick="like({{post.id}})"></i>
-            {% endif %}
-          </div>
-          <div class="col px-1"> <i class="ion-ios-chatboxes-outline icon-1x"></i> <span class="d-block text-sm">{{
-              post.comments|length }}</span> </div>
-          <div id="viewCount_{{ post.id }}" class="col px-1">
-            <i class="ion-ios-eye-outline icon-1x"></i>
-            <span id="viewCountValue_{{ post.id }}" class="d-block text-sm">{{ post.views }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="mt-3">
-      <h5>Comments ({{ comments | length }})</h5>
-      {% for comment in comments %}
-      <div class="media">
-          <div class="media-body">
-              {% if comment_profiles[comment.id] and comment_profiles[comment.id].avatar %}
-              <img class="rounded-circle" style="width: 40px;height: 40px;"
-                  src="{{ url_for('static', filename='assets/profile/' + comment_profiles[comment.id].avatar) }}">
-              {% else %}
-              <img src="{{ url_for('static', filename='assets/images/default_avator.jpg') }}" alt="profile image"
-                  class="rounded-circle" style="width: 40px;height: 40px;" />
-              {% endif %}
-              <a class="mr-2">{{ comment.author.username }}</a> - 
-              <small class="text-muted">{{ format_time_difference(current_date - comment.date_posted) }}</small>
-              <p>{{ comment.body }}</p>
-              {% if comment.author == current_user %}
-              <div>
-                  <a class="btn btn-primary btn-sm mt-1 mb-1"
-                      href="{{ url_for('users.update_comment', post_id=post.id, comment_id=comment.id)}}">Update</a>
-                  <button type="button" class="btn btn-danger btn-sm m-1" data-toggle="modal"
-                      data-target="#deleteCommentModal-{{ comment.id }}">Delete</button>
-              </div>
-              {% elif current_user.is_authenticated and current_user.is_admin() %}
-              <div>
-                  <button type="button" class="btn btn-danger btn-sm m-1" data-toggle="modal"
-                      data-target="#deleteCommentModal-{{ comment.id }}">Delete</button>
-              </div>
-              {% endif %}
-          </div>
-      </div>
-      <!-- Modal for deleting comment -->
-      <div class="modal fade" id="deleteCommentModal-{{ comment.id }}" tabindex="-1" role="dialog"
-          aria-labelledby="deleteCommentModalLabel-{{ comment.id }}" aria-hidden="true">
-          <div class="modal-dialog" role="document">
-              <div class="modal-content">
-                  <div class="modal-header">
-                      <h5 class="modal-title" id="deleteCommentModalLabel-{{ comment.id }}">Delete Comment ?</h5>
-                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                          <span aria-hidden="true">&times;</span>
-                      </button>
-                  </div>
-                  <div class="modal-footer">
-                      <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                      <form action="{{ url_for('users.delete_comment', comment_id=comment.id) }}" method="POST">
-                          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                          <input class="btn btn-danger" type="submit" value="Delete">
-                      </form>
-                  </div>
-              </div>
-          </div>
-      </div>
-      {% endfor %}
-  </div>  
-    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel"
-      aria-hidden="true">
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="deleteModalLabel">Delete Post ?</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
+        <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteModalLabel">Delete Post ?</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
 
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            <form action="{{url_for('users.delete_post',post_id=post.id)}}" method='POST'>
-              <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-              <input class="btn btn-danger" type="submit" value="Delete">
+                    <h5>Comments ({{ comments | length }})</h5>
+                    <p>Debug: {{ comments }}</p>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <form action="{{url_for('users.delete_post',post_id=post.id)}}" method='POST'>
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <input class="btn btn-danger" type="submit" value="Delete">
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="mt-3">
+            <h5>Add a Comment</h5>
+            <form method="POST" action="{{ url_for('users.post', post_id=post.id) }}">
+                {{ form.csrf_token() }}
+                <div class="mb-3">
+                    {{ render_field(form.body, class="form-control", rows=3) }}
+                    {{ render_field(form.submit, class="btn btn-primary") }} <a href="{{ url_for('users.forum') }}"
+   class="btn btn-secondary">Cancel</a>
+                </div>
             </form>
-          </div>
         </div>
-      </div>
-    </div>
-    <div class="mt-3">
-      <h5>Add a Comment</h5>
-      <form method="POST" action="{{ url_for('users.post', post_id=post.id) }}">
-        {{ form.csrf_token() }}
-        <div class="mb-3">
-          {{ render_field(form.body, class="form-control", rows=3) }}
-          {{ render_field(form.submit, class="btn btn-primary") }} <button class="btn btn-dark"
-            onclick="history.back()">Back</button>
-        </div>
-      </form>
-    </div>
 </div>
 </article>
 <br>
@@ -202,19 +219,19 @@
   }
 </script>
 <script>
-  // Function to hide messages after a delay
-  function hideMessages() {
-    var messagesElements = document.querySelectorAll('.alert');
-    if (messagesElements) {
-      setTimeout(function () {
-        messagesElements.forEach(function (element) {
-          element.style.display = 'none';
-        });
-      }, 3000);  // 5000 milliseconds (5 seconds)
+    // Function to hide messages after a delay
+    function hideMessages() {
+        var messagesElements = document.querySelectorAll('.alert');
+        if (messagesElements) {
+            setTimeout(function () {
+                messagesElements.forEach(function (element) {
+                    element.style.display = 'none';
+                });
+            }, 3000);  // 5000 milliseconds (5 seconds)
+        }
     }
-  }
 
-  // Call the function when the page loads
-  window.onload = hideMessages;
+    // Call the function when the page loads
+    window.onload = hideMessages;
 </script>
 {% endblock %}

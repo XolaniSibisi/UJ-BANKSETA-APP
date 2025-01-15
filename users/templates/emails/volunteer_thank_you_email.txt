@@ -1,4 +1,4 @@
-Dear Volunteer,
+Dear {{ username }},
 
 Thank you for registering with us! We greatly appreciate your willingness to contribute to our cause.
 

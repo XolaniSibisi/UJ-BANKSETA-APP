@@ -1,4 +1,4 @@
-Dear Volunteer,
+Dear {{ username }},
 
 We regret to inform you that your application has been rejected. We appreciate your interest in volunteering with us, but unfortunately, we are unable to proceed with your application at this time.
 

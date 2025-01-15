@@ -83,7 +83,7 @@
   
             <form action="/contact" method="POST">
                 {{ render_messages() }}
-                {{ form.csrf_token }}
+                {{ form.hidden_tag() }}
               <div class="row gy-4 gy-xl-5 p-4 p-xl-5">
                 <div class="col-12">
                   <label for="name" class="form-label">Full Name <span class="text-danger">*</span></label>

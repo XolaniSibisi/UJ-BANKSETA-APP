@@ -11,49 +11,49 @@
       <section class="col-sm-11 col-md-8 col-lg-6 col-xl-5 mt-5">
         <div class="card shadow-sm border-1 mb-4">
           <div class="p-4">
-            <form action="{{ url_for('users.register') }}" method="post" enctype="multipart/form-data">
-              <div class="mb-3">
-                <h2 class="card-title text-center">Create Account</h2>
-              </div>
-              {{ render_messages() }}
-              {{ form.csrf_token() }}
-              {{ render_field(form.username, placeholder="Enter your username", autofocus="true") }}
-              <div class="row">
-                <div class="col">
-                  {{ render_field(form.first_name, placeholder="First name") }}
-                </div>
-                <div class="col">
-                  {{ render_field(form.last_name, placeholder="Last name") }}
-                </div>
-              </div>
-              <div style="display: flex; flex-direction: column;">
-                {{ render_field(form.email, placeholder="Enter your email") }}
-                <small id="emailHelp" class="form-text text-muted" style="margin-top: -20px;">We'll never share your email with anyone else.</small>
-              </div>
-              <br>            
-              {{ render_field(form.role, class="form-select", label="Choose your role") }}
-              
-              <!-- Conditional fields for volunteer -->
-              <div id="id-copy-field" class="mb-3" style="display: {{ 'block' if form.role.data == 'volunteer' else 'none' }}">
-                {{ render_field(form.id_copy) }}
-                {% for error in form.id_copy.errors %}
-                  <div class="invalid-feedback d-block">{{ error }}</div>
-                {% endfor %}
-              </div>
-              <div id="certificates-field" class="mb-3" style="display: {{ 'block' if form.role.data == 'volunteer' else 'none' }}">
-                {{ render_field(form.certificates) }}
-                {% for error in form.certificates.errors %}
-                  <div class="invalid-feedback d-block">{{ error }}</div>
-                {% endfor %}
-              </div>            
-              {{ render_field(form.password, placeholder="Choose your password") }}
-              {{ render_field(form.remember) }}
-              {{ render_field(form.submit, class="w-100") }}
+              <form action="{{ url_for('users.register') }}" method="post" enctype="multipart/form-data">
+                  <div class="mb-3">
+                      <h2 class="card-title text-center">Create Account</h2>
+                  </div>
+                  {{ render_messages() }}
+                  {{ form.hidden_tag() }}
+                  {{ render_field(form.username, placeholder="Enter your username", autofocus="true") }}
+                  <div class="row">
+                      <div class="col">
+                          {{ render_field(form.first_name, placeholder="First name") }}
+                      </div>
+                      <div class="col">
+                          {{ render_field(form.last_name, placeholder="Last name") }}
+                      </div>
+                  </div>
+                  <div style="display: flex; flex-direction: column;">
+                      {{ render_field(form.email, id="email_field", placeholder="Enter your email") }}
+                      <small id="emailHelp" class="form-text text-muted" style="margin-top: -20px;">We'll never share your email with anyone else.</small>
+                  </div>
+                  <br>
+                  {{ render_field(form.role, class="form-select", label="Choose your role") }}
 
-              <p class="text-center mt-3">
-                Have an account? <a href="{{ url_for('users.login') }}" class="text-decoration-none">Log In</a>
-              </p>
-            </form>
+                  <!-- Conditional fields for volunteer -->
+                  <div id="id-copy-field" class="mb-3" style="display: {{ 'block' if form.role.data == 'tutor' else 'none' }}">
+                      {{ render_field(form.id_copy, id="id-copy-field") }}
+                      {% for error in form.id_copy.errors %}
+                      <div class="invalid-feedback d-block">{{ error }}</div>
+                      {% endfor %}
+                  </div>
+                  <div id="certificates-field" class="mb-3" style="display: {{ 'block' if form.role.data == 'tutor' else 'none' }}">
+                      {{ render_field(form.certificates, id="certificates-field") }}
+                      {% for error in form.certificates.errors %}
+                      <div class="invalid-feedback d-block">{{ error }}</div>
+                      {% endfor %}
+                  </div>
+                  {{ render_field(form.password, id="password_field", placeholder="Choose your password") }}
+                  {{ render_field(form.remember, id="remember_field") }}
+                  {{ render_field(form.submit, class="w-100") }}
+
+                  <p class="text-center mt-3">
+                      Have an account? <a href="{{ url_for('users.login') }}" class="text-decoration-none">Log In</a>
+                  </p>
+              </form>
           </div>
         </div>
       </section>
@@ -69,7 +69,7 @@
 
     // Function to toggle visibility of additional fields for volunteers
     function toggleVolunteerFields() {
-      if (roleField.value === 'volunteer') {
+      if (roleField.value === 'tutor') {
         idCopyField.style.display = 'block';
         certificatesField.style.display = 'block';
       } else {

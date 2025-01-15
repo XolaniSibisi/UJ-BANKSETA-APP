@@ -34,7 +34,7 @@ from users.models import User, Content, Contact
 class RegisterForm(FlaskForm):
 
     username = StringField('Username',
-                           validators=[DataRequired(), Length(1, 30), StrongUsername(),
+                           validators=[DataRequired(), Length(3, 30), StrongUsername(),
                                        Unique(User, User.username, message='Username already exists choose another.')]
                            )
     first_name = StringField('First Name', validators=[
@@ -45,8 +45,7 @@ class RegisterForm(FlaskForm):
                        validators=[DataRequired(), Length(8, 150), Email(),
                                    Unique(User, User.email, message='Email Address already registered with us.')]
                        )
-    role = SelectField('Role', choices=[('admin', 'Admin'), ('student', 'Student'), (
-        'volunteer', 'Volunteer')], validators=[DataRequired()])
+    role = SelectField('Role', choices=[('student', 'Student'), ('tutor', 'Tutor')], validators=[DataRequired()])
     
     # Additional fields for volunteer
     id_copy = FileField('Upload ID Copy', validators=[FileAllowed(['pdf'], message='Please upload PDF only.'), FileSize(max_size=2000000, message='ID copy size should not greater than 2MB.')])
@@ -122,7 +121,7 @@ class EditUserProfileForm(FlaskForm):
 
     username = StringField('Username',
                            validators=[DataRequired(), Length(
-                               1, 30), StrongUsername()]
+                               3, 30), StrongUsername()]
                            )
     first_name = StringField('First Name', validators=[
                              DataRequired(), Length(3, 25), StrongNames()])

@@ -27,7 +27,7 @@
     integrity="sha512-4S7w9W6/qX2AhdMAAJ+jYF/XifUfFtrnFSMKHzFWbkE2Sgvbn5EhGIR9w4tvk0vfS1hKppFIbWt/vdVIFrIAKw=="
     crossorigin="anonymous" referrerpolicy="no-referrer" />
   <title>{% block title %}{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
   {{ bootstrap.load_css() }}
 
   <style>
@@ -41,7 +41,7 @@
 <body>
   <section class="services_section">
     <div class="holder">
-      <div class="top-nav">
+      <div id="navbarCollapse" class="top-nav collapse navbar-collapse">
         <div class="logo"><img src="{{ url_for('static', filename='assets/images/logo 5.png')}}" alt="logo"
             height="90px" width="150px"></div>
 
@@ -78,7 +78,7 @@
               {% elif current_user.is_student() %}
               {{ render_nav_item('users.contact', 'Contact Us') }}
               {{ render_nav_item('users.profile', 'Profile') }}
-              {% elif current_user.is_volunteer() %}
+              {% elif current_user.is_tutor() %}
               {{ render_nav_item('users.profile', 'Profile') }}
               {% endif %}
               {% endif %}
@@ -149,7 +149,7 @@
                 </div>           
               <p class="mb-1">
                 <a class="link-secondary text-decoration-none"
-                  href="mailto:systemsprogramming95@gmail.com">systemsadmin@jbs.ac.za</a>
+                  href="mailto:jbssystemsadmi@uj.co.za">systemsadmin@jbs.ac.za</a>
               </p>
               </div>
             </div>
@@ -180,28 +180,28 @@
             <div class="widget">
               <h4 class="widget-title mb-4">Contact Us</h4>
               <form action="/contact" method="POST" class="contact-form">
-                {% if form %}
-                {{ form.csrf_token }}
-                <div class="row gx-3 gy-2">
-                  <div class="col-12">
-                    <input type="text" class="form-control" id="name" name="name" placeholder="Full Name *" required>
+                  {% if form %}
+                  {{ form.hidden_tag() }}
+                  <div class="row gx-3 gy-2">
+                      <div class="col-12">
+                          <input type="text" class="form-control" id="name" name="name" placeholder="Full Name *" required>
+                      </div>
+                      <div class="col-12">
+                          <input type="email" class="form-control" id="email" name="email" placeholder="Email *" required>
+                      </div>
+                      <div class="col-12">
+                          <input type="text" class="form-control" id="subject" name="subject" placeholder="Subject *"
+                                 required>
+                      </div>
+                      <div class="col-12">
+                          <textarea class="form-control" id="message" name="message" placeholder="Message *" rows="3"
+                                    required></textarea>
+                      </div>
+                      <div class="col-12">
+                          <button class="btn btn-primary btn-lg" type="submit">Send Message</button>
+                      </div>
                   </div>
-                  <div class="col-12">
-                    <input type="email" class="form-control" id="email" name="email" placeholder="Email *" required>
-                  </div>
-                  <div class="col-12">
-                    <input type="text" class="form-control" id="subject" name="subject" placeholder="Subject *"
-                      required>
-                  </div>
-                  <div class="col-12">
-                    <textarea class="form-control" id="message" name="message" placeholder="Message *" rows="3"
-                      required></textarea>
-                  </div>
-                  <div class="col-12">
-                    <button class="btn btn-primary btn-lg" type="submit">Send Message</button>
-                  </div>
-                </div>
-                {% endif %}
+                  {% endif %}
               </form>
             </div>
           </div>
@@ -262,7 +262,8 @@
   </footer>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
+      document.addEventListener('DOMContentLoaded', function () {
+        const navbarCollapse = document.getElementById("navbarCollapse");
       // Close the navbar when a link is clicked
       document.querySelectorAll('.navbar-nav > .nav-item > .nav-link').forEach(function (element) {
         element.addEventListener('click', function () {

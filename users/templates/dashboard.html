@@ -25,7 +25,7 @@
                                 </div>
                             </div>
                             <p class="mt-3 mb-0 text-muted text-sm text-warning-emphasis">
-                                Last Updated:
+                                Updated:
                                 {% if last_student_registration_date %}
                                 {{ last_student_registration_date.strftime('%Y-%m-%d') }}
                                 {% else %}
@@ -40,7 +40,7 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col">
-                                    <h5 class="card-title text-uppercase text-muted mb-0">Volunteers</h5>
+                                    <h5 class="card-title text-uppercase text-muted mb-0">Tutors</h5>
                                     <span class="h2 font-weight-bold mb-0">{{num_volunteers}}</span>
                                 </div>
                                 <div class="col-auto">
@@ -50,11 +50,11 @@
                                 </div>
                             </div>
                             <p class="mt-3 mb-0 text-muted text-sm text-warning-emphasis">
-                                Last Updated:
+                                Updated:
                                 {% if last_volunteer_registration_date %}
                                 {{ last_volunteer_registration_date.strftime('%Y-%m-%d') }}
                                 {% else %}
-                                No volunteers registered yet.
+                                No tutor registered.
                                 {% endif %}
                             </p>
                         </div>
